@@ -179,7 +179,7 @@
 			$(window).resize();
 
 			var lastUpdated = moment(dataStore.latestReadings[dataStore.latestReadings.length - 1]["created"]);
-			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm:ss A");
+			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm A");
 			$("#weather-last-update").html("Data updated " + lastUpdatedString + ".");
 
 			var temperatureAverage = allValues["air_temp"].reduce(function (total, number) {
