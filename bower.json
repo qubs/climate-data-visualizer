@@ -1,0 +1,30 @@
+{
+  "name": "qubs-climate-data-visualizer",
+  "authors": [
+    "David Lougheed <david.lougheed@gmail.com>"
+  ],
+  "description": "A visualization dashboard for the Queen's University Biological Station's climate data.",
+  "main": "index.html",
+  "keywords": [
+    "climate",
+    "data",
+    "visualization"
+  ],
+  "license": "Apache",
+  "homepage": "http://climate.qubs.ca/",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "highcharts": "^4.2.6",
+    "jquery": "^3.1.0",
+    "jquery-ui": "^1.12.0",
+    "jquery-stupid-table": "^1.0.1",
+    "moment": "^2.14.1"
+  }
+}

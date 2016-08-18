@@ -1,0 +1,405 @@
+<!--
+   Copyright 2016 the Queen's University Biological Station
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>QUBS Climate Data Visualizer</title>
+
+	<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,600,700,700i" rel="stylesheet">
+	<link rel="stylesheet" href="style.css">
+
+	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+	<script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
+	<script type="text/javascript" src="bower_components/highcharts/highstock.js"></script>
+	<script type="text/javascript" src="bower_components/jquery-stupid-table/stupidtable.min.js"></script>
+	<script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
+
+	<script type="text/javascript">
+		const API_URL = "http://climate.qubs.ca/api/";
+		var stations = [];
+
+		var dataStore = {
+			stations: [],
+			indexedStations: [],
+
+			sensors: [],
+			indexedSensors: [],
+
+			readings: [],
+			latestReadings: []
+		};
+
+		Highcharts.setOptions({
+			global : {
+				useUTC : false
+			}
+		});
+
+		$(window).resize(function () {
+			$("#temp-overview-container").css("height", ($(window).height() - 16 - 90).toString() + "px");
+		});
+
+		var updateWeather = function (first) {
+			// Initialize arrays used for averaging.
+			var allValues = {
+				"air_temp": [],
+				"rh": [],
+				"baro": [],
+				"wind_speed": [],
+				"mean_wind_speed": [],
+				"wind_dir": [],
+				"mean_wind_direction": []
+			}
+
+			// Initialize array used for table values.
+			var readings = {
+				"air_temp": {
+					value: undefined,
+					suffix: "&deg;C",
+					bounds: [-50, 60],
+				},
+				"rh": {
+					value: undefined,
+					suffix: "%",
+					bounds: [0, 100]
+				},
+				"baro": {
+					value: undefined,
+					suffix: " hPa",
+					bounds: [300, 1200]
+				},
+				"wind_speed": {
+					value: undefined,
+					suffix: " m/s",
+					bounds: [0, 90]
+				},
+				"mean_wind_speed": {
+					value: undefined,
+					suffix: " m/s",
+					bounds: [0, 90]
+				},
+				"wind_dir": {
+					value: undefined,
+					suffix: "&deg;",
+					bounds: [0, 359.9]
+				},
+				"mean_wind_direction": {
+					value: undefined,
+					suffix: "&deg;",
+					bounds: [0, 359.9]
+				}
+			};
+
+			if (first) {
+				// Clear contents of table.
+				$("#weather-table tbody").html("");
+			}
+
+			for (var s in dataStore.stations) {
+				if (dataStore.stations.hasOwnProperty(s)) {
+					const st = dataStore.stations[s];
+
+					const latestReadings = $.grep(dataStore.latestReadings, function (e) {
+						return e.station == st["id"]
+					});
+
+					for (var r in readings) {
+						if (readings.hasOwnProperty(r)) {
+							// Set proper values for table display.
+
+							readings[r].value = ($.grep(latestReadings, function (e) {
+								return dataStore.indexedSensors[e.sensor]["data_id"] === r;
+							}))[0];
+							if (readings[r].value === undefined) {
+								// If nothing was found for that sensor on the station, create a nice N/A message.
+								readings[r].value = '<span class="not-available">N/A</span>';
+							} else {
+								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25) {
+									// Queen's Point has a faulty RH sensor.
+									readings[r].value = '<span class="not-available">N/A</span>';
+								} else {
+									var realTemp = readings[r].value.value / 100.0;
+									if (realTemp > readings[r].bounds[0] && realTemp < readings[r].bounds[1]) {
+										allValues[r].push(realTemp);
+									}
+									readings[r].value = (Math.round(realTemp * 10.0) / 10.0).toString()
+										+ readings[r].suffix;
+								}
+							}
+						}
+					}
+
+					var wind_speed = readings["wind_speed"].value;
+					if (st["name"] === "Queen's Point") {
+						// Queen's Point has more of a breakdown of wind speeds.
+						wind_speed = readings["mean_wind_speed"].value;
+					}
+
+					var wind_dir = readings["wind_dir"].value;
+					if (st["name"] === "Queen's Point") {
+						// Queen's Point has a different sensor type for wind direction.
+						wind_dir = readings["mean_wind_direction"].value;
+					}
+
+					if (first) {
+						$("#weather-table tbody").append('<tr id="station-' + st["id"] + '">'
+							+ '<td class="station-name">' + st["name"] + '</td>'
+							+ '<td class="station-air-temp">' + readings["air_temp"].value + '</td>'
+							+ '<td class="station-rh">' + readings["rh"].value + '</td>'
+							+ '<td class="station-baro">' + readings["baro"].value + '</td>'
+							+ '<td class="station-wind-speed">' + wind_speed + '</td>'
+							+ '<td class="station-wind-dir">' + wind_dir + '</td></tr>');
+					} else {
+						$("#station-" + st["id"]).children(".station-air-temp").html(readings["air_temp"].value);
+						$("#station-" + st["id"]).children(".station-rh").html(readings["rh"].value);
+						$("#station-" + st["id"]).children(".station-baro").html(readings["baro"].value);
+						$("#station-" + st["id"]).children(".station-wind-speed").html(wind_speed);
+						$("#station-" + st["id"]).children(".station-wind-dir").html(wind_dir);
+					}
+				}
+			}
+
+			// Force Highcharts to properly draw height.
+			$(window).resize();
+
+			var lastUpdated = moment(dataStore.latestReadings[dataStore.latestReadings.length - 1]["created"]);
+			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm:ss A");
+			$("#weather-last-update").html("Data updated " + lastUpdatedString + ".");
+
+			var temperatureAverage = allValues["air_temp"].reduce(function (total, number) {
+				return total + number;
+			}, 0) / allValues["air_temp"].length;
+			$("#weather-temperature").html(Math.round(temperatureAverage).toString() + "&deg;C");
+
+			var humidityAverage = allValues["rh"].reduce(function (total, number) {
+				return total + number;
+			}, 0) / allValues["rh"].length;
+			$("#weather-humidity").html(Math.round(humidityAverage).toString() + "%");
+		}
+
+		$(document).ready(function () {
+			$(window).resize();
+
+			$("#tabs").tabs();
+			$("#weather-table").stupidtable();
+
+			$.when(
+				$.get(API_URL + "/stations/", function (stations) {
+					dataStore.stations = stations;
+				}),
+				$.get(API_URL + "/sensors/", function (sensors) {
+					dataStore.sensors = sensors;
+					for (var s in sensors) {
+						if (sensors.hasOwnProperty(s)) {
+							dataStore.indexedSensors[sensors[s]["id"]] = sensors[s];
+						}
+					}
+				}),
+				$.get(API_URL + "/readings/", function (readings) {
+					dataStore.readings = readings;
+				}),
+				$.get(API_URL + "/readings/latest/", function (readings) {
+					dataStore.latestReadings = readings;
+				})
+			).then(function () {
+				var stationSeries = [];
+
+				for (var s in dataStore.stations) {
+					if (dataStore.stations.hasOwnProperty(s)) {
+						dataStore.indexedStations[dataStore.stations[s]["id"]] = dataStore.stations[s];
+						dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"] = [];
+
+						const currentStation = dataStore.indexedStations[dataStore.stations[s]["id"]];
+
+						var initialData = [];
+
+						for (var r in dataStore.readings) {
+							if (dataStore.readings.hasOwnProperty(r)) {
+								if (dataStore.readings[r].station == currentStation["id"]) {
+									dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"].push(dataStore.readings[r]);
+
+									if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "air_temp") {
+										var y = dataStore.readings[r]["value"] / 100.0;
+										if (y < -60.0 || y > 60.0) {
+											y = null;
+										}
+										initialData.push([
+											new Date(dataStore.readings[r]["read_time"]).getTime(), y
+										]);
+									}
+								}
+							}
+						}
+
+						stationSeries.push({
+							name: dataStore.stations[s].name,
+							data: initialData
+						});
+					}
+				}
+
+				updateWeather(true);
+
+				var yesterday = new Date()
+				yesterday.setDate(yesterday.getDate() - 1);
+
+				$("#temp-overview-container").highcharts({
+					title: { text: "Temperature" },
+					subtitle: { text: "All QUBS Climate Stations" },
+
+					xAxis: {
+						type: "datetime",
+						tickPixelInterval: 150,
+						min: yesterday.getTime(),
+						max: new Date().getTime()
+					},
+					yAxis: {
+						title: {
+							text: "Temperature (°C)"
+						},
+						plotLines: [{
+							value: 0,
+							width: 1,
+							color: "#FF5722"
+						}]
+					},
+					tooltip: {
+						valueSuffix: "°C"
+					},
+					scrollbar: {
+						enabled: true
+					},
+
+					plotOptions: {
+						series: {
+							marker: {
+								enabled: false
+							}
+						}
+					},
+
+					chart: {
+						type: "line",
+						animation: Highcharts.svg,
+						zoomType: "x",
+						events: {
+							load: function () {
+								window.setInterval(function () {
+									$.get(API_URL + "/readings/", function (readings) {
+										for (var r in readings) {
+											if (readings.hasOwnProperty(r)) {
+												var findExisting = $.grep(dataStore.readings, function (e) {
+													return e.id == readings[r].id
+												});
+
+												if (findExisting.length === 0) {
+													// OK to add new reading to the data store.
+
+													dataStore.readings.push(readings[r]);
+													if (dataStore.indexedSensors[readings[r].sensor]["data_id"] == "air_temp") {
+														var y = readings[r]["value"] / 100.0;
+														if (y < -50.0 || y > 60.0) {
+															y = null;
+														}
+
+														var station = dataStore.indexedStations[readings[r].station];
+														var stationIndex = 0;
+														for (var s in dataStore.stations) {
+															if (dataStore.stations.hasOwnProperty(s)) {
+																if (dataStore.stations[s]["id"] == station["id"]) {
+																	stationIndex = s;
+																}
+															}
+														}
+
+														/*
+															Series should have same index as station since they were
+															pushed at the same time. Shift if we have more than a day's
+															worth of data.
+														*/
+														var shift = this.series[stationIndex].data.length > 96;
+														this.series[stationIndex].addPoint([
+															new Date(readings[r]["read_time"]).getTime(), y
+														], true, shift);
+													}
+												}
+											}
+										}
+
+										$.get(API_URL + "/readings/latest/", function (readings) {
+											dataStore.latestReadings = readings;
+											updateWeather(false);
+											// TODO: Edit X axis zoom scale.
+										});
+									}.bind(this));
+								}.bind(this), 5000);
+							}
+						}
+					},
+					series: stationSeries
+				});
+			});
+		});
+	</script>
+</head>
+<body>
+	<div id="qubsBar">
+		<ul>
+			<li><a href="https://qubs.ca">QUBS</a></li>
+			<li><a href="https://elbowlakecentre.ca">ELEEC</a></li>
+			<li class="active"><a href="#">Climate Network</a></li>
+			<li><a href="http://dataverse.scholarsportal.info/dvn/dv/QUBS">QUBS Dataverse</a></li>
+			<li><a href="https://opinicon.wordpress.com/">Opinicon Natural History</a></li>
+			<li><a href="http://ecoadventurecamp.ca">Eco-Adventure Camp</a></li>
+			<li><a href="https://fowlerherbarium.ca">Fowler Herbarium</a></li>
+			<li><a href="http://fieldstations.ca">fieldstations.ca</a></li>
+		</ul>
+	</div>
+	<div id="tabs">
+		<ul>
+			<li><a href="#tabs-1">Overview</a></li>
+			<li><a href="#tabs-2">Temperature</a></li>
+		</ul>
+		<div id="tabs-1">
+			<div id="weather-overview">
+				It is currently around <span id="weather-temperature">XX&deg;C</span> on QUBS properties, <br>
+				with a humidity level of about <span id="weather-humidity">YY%</span>.
+				<div id="weather-last-update">Last Updated</div>
+			</div>
+			<div id="weather-table-container">
+				<table id="weather-table">
+					<thead>
+						<tr>
+							<th data-sort="string-ins" class="sortable">Station</th>
+							<th>Air Temperature</th>
+							<th>Relative Humidity</th>
+							<th>Air Pressure</th>
+							<th>Wind Speed</th>
+							<th>Wind Direction</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+		<div id="tabs-2">
+			<div id="temp-overview-container"></div>
+		</div>
+</body>
+</html>
