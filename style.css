@@ -39,6 +39,7 @@ ul.ui-tabs-nav li.ui-tabs-tab {
 	display: inline-block;
 	height: 60px;
 	box-sizing: border-box;
+	margin-left: 1.5rem;
 
 	font-size: 1rem;
 }
@@ -48,7 +49,6 @@ ul.ui-tabs-nav li.ui-tabs-tab.ui-tabs-active a {
 ul.ui-tabs-nav li.ui-tabs-tab a {
 	display: block;
 	height: 60px;
-	padding: 0 1.5rem;
 
 	line-height: 60px;
 	text-decoration: none;
