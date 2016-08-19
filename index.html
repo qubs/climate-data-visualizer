@@ -175,11 +175,13 @@
 							+ '<td class="station-wind-speed">' + wind_speed + '</td>'
 							+ '<td class="station-wind-dir">' + wind_dir + '</td></tr>');
 					} else {
-						$("#station-" + st["id"]).children(".station-air-temp").html(readings["air_temp"].value);
-						$("#station-" + st["id"]).children(".station-rh").html(readings["rh"].value);
-						$("#station-" + st["id"]).children(".station-baro").html(readings["baro"].value);
-						$("#station-" + st["id"]).children(".station-wind-speed").html(wind_speed);
-						$("#station-" + st["id"]).children(".station-wind-dir").html(wind_dir);
+						// TODO: Devise a way to avoid "N/A" while data is updating.
+						var $stationRow = $("#station-" + st["id"]);
+						$stationRow.children(".station-air-temp").html(readings["air_temp"].value);
+						$stationRow.children(".station-rh").html(readings["rh"].value);
+						$stationRow.children(".station-baro").html(readings["baro"].value);
+						$stationRow.children(".station-wind-speed").html(wind_speed);
+						$stationRow.children(".station-wind-dir").html(wind_dir);
 					}
 				}
 			}
