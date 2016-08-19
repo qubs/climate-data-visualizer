@@ -48,9 +48,7 @@
 		};
 
 		Highcharts.setOptions({
-			global : {
-				useUTC : false
-			}
+			global : { useUTC : false }
 		});
 
 		$(window).resize(function () {
@@ -268,8 +266,8 @@
 
 				updateWeather(true);
 
-				var yesterday = new Date()
-				yesterday.setDate(yesterday.getDate() - 1);
+				var startDay = new Date()
+				startDay.setDate(startDay.getDate() - 7);
 
 				$("#temp-overview-container").highcharts({
 					title: { text: "Temperature" },
@@ -278,31 +276,23 @@
 					xAxis: {
 						type: "datetime",
 						tickPixelInterval: 150,
-						min: yesterday.getTime(),
+						min: startDay.getTime(),
 						max: new Date().getTime()
 					},
 					yAxis: {
-						title: {
-							text: "Temperature (°C)"
-						},
+						title: { text: "Temperature (°C)" },
 						plotLines: [{
 							value: 0,
 							width: 1,
 							color: "#FF5722"
 						}]
 					},
-					tooltip: {
-						valueSuffix: "°C"
-					},
-					scrollbar: {
-						enabled: true
-					},
+					tooltip: { valueSuffix: "°C" },
+					scrollbar: { enabled: true },
 
 					plotOptions: {
 						series: {
-							marker: {
-								enabled: false
-							}
+							marker: { enabled: false }
 						}
 					},
 
@@ -342,10 +332,10 @@
 
 														/*
 															Series should have same index as station since they were
-															pushed at the same time. Shift if we have more than a day's
+															pushed at the same time. Shift if we have more than a week's
 															worth of data.
 														*/
-														var shift = this.series[stationIndex].data.length > 96;
+														var shift = this.series[stationIndex].data.length > 672;
 														this.series[stationIndex].addPoint([
 															new Date(readings[r]["read_time"]).getTime(), y
 														], true, shift);
