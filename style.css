@@ -70,12 +70,13 @@ div.ui-tabs-panel {
 
 .status-message {
 	position: fixed;
-	left: 50%; top: calc(50% + 40px);
+	left: 50%; top: calc(50% + 45px);
 	margin-left: -100px; margin-top: -10px;
 	width: 200px;
 	min-height: 20px;
 
 	font-family: "Open Sans", sans-serif;
+	line-height: 19px;
 	text-align: center;
 	color: #757575;
 }
