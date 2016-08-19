@@ -27,12 +27,14 @@
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="bower_components/highcharts/highstock.js"></script>
+	<!-- Include Highcharts' experimental boost module to increase performance. -->
+	<script type="text/javascript" src="bower_components/highcharts/modules/boost.js"></script>
 	<script type="text/javascript" src="bower_components/jquery-stupid-table/stupidtable.min.js"></script>
 	<script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
 
 	<script type="text/javascript">
-		const API_URL = "http://climate.qubs.ca/api/";
-		var stations = [];
+		const API_URL = "http://localhost:8000";
+		const NA_STRING = '<span class="not-available">N/A</span>';
 
 		var dataStore = {
 			stations: [],
@@ -73,36 +75,43 @@
 					value: undefined,
 					suffix: "&deg;C",
 					bounds: [-50, 60],
+					decimals: 2
 				},
 				"rh": {
 					value: undefined,
 					suffix: "%",
-					bounds: [0, 100]
+					bounds: [0, 100],
+					decimals: 2
 				},
 				"baro": {
 					value: undefined,
 					suffix: " hPa",
-					bounds: [300, 1200]
+					bounds: [300, 1200],
+					decimals: 2
 				},
 				"wind_speed": {
 					value: undefined,
 					suffix: " m/s",
-					bounds: [0, 90]
+					bounds: [0, 90],
+					decimals: 2
 				},
 				"mean_wind_speed": {
 					value: undefined,
 					suffix: " m/s",
-					bounds: [0, 90]
+					bounds: [0, 90],
+					decimals: 2
 				},
 				"wind_dir": {
 					value: undefined,
 					suffix: "&deg;",
-					bounds: [0, 359.9]
+					bounds: [0, 359.9],
+					decimals: 2
 				},
 				"mean_wind_direction": {
 					value: undefined,
 					suffix: "&deg;",
-					bounds: [0, 359.9]
+					bounds: [0, 359.9],
+					decimals: 2
 				}
 			};
 
@@ -128,17 +137,19 @@
 							}))[0];
 							if (readings[r].value === undefined) {
 								// If nothing was found for that sensor on the station, create a nice N/A message.
-								readings[r].value = '<span class="not-available">N/A</span>';
+								readings[r].value = NA_STRING;
 							} else {
 								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25) {
 									// Queen's Point has a faulty RH sensor.
-									readings[r].value = '<span class="not-available">N/A</span>';
+									readings[r].value = NA_STRING;
 								} else {
-									var realTemp = readings[r].value.value / 100.0;
+									var realTemp = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
 									if (realTemp > readings[r].bounds[0] && realTemp < readings[r].bounds[1]) {
 										allValues[r].push(realTemp);
 									}
-									readings[r].value = (Math.round(realTemp * 10.0) / 10.0).toString()
+
+									// Round off to 1 decimal place and set the value string with the suffix.
+									readings[r].value = (Math.round(realTemp * Math.pow(10.0, (readings[r].decimals - 1))) / Math.pow(10.0, (readings[r].decimals - 1))).toString()
 										+ readings[r].suffix;
 								}
 							}
