@@ -209,6 +209,7 @@
 
 			$("#tabs").tabs();
 			$("#weather-table").stupidtable();
+			$(".show-on-load").hide();
 
 			$.when(
 				$.get(API_URL + "/stations/", function (stations) {
@@ -365,6 +366,9 @@
 					},
 					series: stationSeries
 				});
+
+				$(".show-on-load").slideDown();
+				$(".status-message").hide();
 			});
 		});
 	</script>
@@ -388,26 +392,29 @@
 			<li><a href="#tabs-2">Temperature</a></li>
 		</ul>
 		<div id="tabs-1">
-			<div id="weather-overview">
-				It is currently around <span id="weather-temperature">XX&deg;C</span> on QUBS properties, <br>
-				with a humidity level of about <span id="weather-humidity">YY%</span>.
-				<div id="weather-last-update">Last Updated</div>
+			<div class="show-on-load">
+				<div id="weather-overview">
+					It is currently around <span id="weather-temperature">XX&deg;C</span> on QUBS properties, <br>
+					with a humidity level of about <span id="weather-humidity">YY%</span>.
+					<div id="weather-last-update">Last Updated</div>
+				</div>
+				<div id="weather-table-container">
+					<table id="weather-table">
+						<thead>
+							<tr>
+								<th data-sort="string-ins" class="sortable">Station</th>
+								<th>Air Temperature</th>
+								<th>Relative Humidity</th>
+								<th>Air Pressure</th>
+								<th>Wind Speed</th>
+								<th>Wind Direction</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
 			</div>
-			<div id="weather-table-container">
-				<table id="weather-table">
-					<thead>
-						<tr>
-							<th data-sort="string-ins" class="sortable">Station</th>
-							<th>Air Temperature</th>
-							<th>Relative Humidity</th>
-							<th>Air Pressure</th>
-							<th>Wind Speed</th>
-							<th>Wind Direction</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
-			</div>
+			<div class="status-message">Loading...</div>
 		</div>
 		<div id="tabs-2">
 			<div id="temp-overview-container"></div>

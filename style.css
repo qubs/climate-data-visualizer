@@ -68,6 +68,18 @@ div.ui-tabs-panel {
 	overflow-y: auto;
 }
 
+.status-message {
+	position: fixed;
+	left: 50%; top: calc(50% + 40px);
+	margin-left: -100px; margin-top: -10px;
+	width: 200px;
+	min-height: 20px;
+
+	font-family: "Open Sans", sans-serif;
+	text-align: center;
+	color: #757575;
+}
+
 #weather-overview {
 	padding: 1.5rem;
 	box-sizing: border-box;
