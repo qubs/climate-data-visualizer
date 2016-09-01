@@ -196,14 +196,14 @@
 									// Queen's Point has a faulty RH sensor.
 									readings[r].value = NA_STRING;
 								} else {
-									var realTemp = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
-									if (realTemp > readings[r].bounds[0] && realTemp < readings[r].bounds[1]) {
-										allValues[r].push(realTemp);
+									var value = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
+									if (value > readings[r].bounds[0] && value < readings[r].bounds[1]) {
+										allValues[r].push(value);
 									}
 
 									// Round off to 1 decimal place and set the value string with the suffix.
-									readings[r].value = (Math.round(realTemp * Math.pow(10.0, (readings[r].decimals - 1))) / Math.pow(10.0, (readings[r].decimals - 1))).toString()
-										+ readings[r].suffix;
+									const rp = Math.pow(10.0, (readings[r].decimals - 1));
+									readings[r].value = (Math.round(value * rp) / rp).toString() + readings[r].suffix;
 								}
 							}
 						}
