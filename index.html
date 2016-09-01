@@ -35,8 +35,12 @@
 	<script type="text/javascript">
 		const API_URL = "http://localhost:8000";
 		const NA_STRING = '<span class="not-available">N/A</span>';
+		const DAYS_TO_LOAD = 31;
+		const DAYS_TO_SHOW = 7;
 
 		var dataStore = {
+			readTimeOfLastGraphUpdate: null,
+
 			stations: [],
 			indexedStations: [],
 
@@ -271,6 +275,9 @@
 			$("#weather-table").stupidtable();
 			$(".show-on-load").hide();
 
+			var startTime = new Date();
+			startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
+
 			$.when(
 				$.get(API_URL + "/stations/", function (stations) {
 					dataStore.stations = stations;
@@ -283,7 +290,9 @@
 						}
 					}
 				}),
-				$.get(API_URL + "/readings/", function (readings) {
+				$.get(API_URL + "/readings/", {
+					start: startTime.toISOString()
+				}, function (readings) {
 					dataStore.readings = readings;
 				}),
 				$.get(API_URL + "/readings/latest/", function (readings) {
@@ -329,95 +338,101 @@
 				updateWeather(true);
 
 				var startDay = new Date()
-				startDay.setDate(startDay.getDate() - 7);
+				startDay.setDate(startDay.getDate() - DAYS_TO_SHOW);
 
-				$("#temp-overview-container").highcharts({
-					title: { text: "Temperature" },
-					subtitle: { text: "All QUBS Climate Stations" },
+				if (dataStore.readings.length > 0) {
+					dataStore.readTimeOfLastGraphUpdate = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
 
-					xAxis: {
-						type: "datetime",
-						tickPixelInterval: 150,
-						min: startDay.getTime(),
-						max: new Date().getTime()
-					},
-					yAxis: {
-						title: { text: "Temperature (°C)" },
-						plotLines: [{
-							value: 0,
-							width: 1,
-							color: "#FF5722"
-						}]
-					},
-					tooltip: { valueSuffix: "°C" },
-					scrollbar: { enabled: true },
+					$("#temp-overview-container").highcharts({
+						xAxis: {
+							type: "datetime",
+							tickPixelInterval: 150,
+							min: startDay.getTime(),
+							max: new Date().getTime()
+						},
+						yAxis: {
+							title: { text: "Temperature (°C)" },
+							plotLines: [{
+								value: 0,
+								width: 1,
+								color: "#FF5722"
+							}]
+						},
+						tooltip: { valueSuffix: "°C" },
+						scrollbar: { enabled: true },
 
-					plotOptions: {
-						series: {
-							marker: { enabled: false }
-						}
-					},
+						plotOptions: {
+							series: {
+								marker: { enabled: false }
+							}
+						},
 
-					chart: {
-						type: "line",
-						animation: Highcharts.svg,
-						zoomType: "x",
-						events: {
-							load: function () {
-								window.setInterval(function () {
-									$.get(API_URL + "/readings/", function (readings) {
-										for (var r in readings) {
-											if (readings.hasOwnProperty(r)) {
-												var findExisting = $.grep(dataStore.readings, function (e) {
-													return e.id == readings[r].id
-												});
+						chart: {
+							type: "line",
+							animation: Highcharts.svg,
+							zoomType: "x",
+							events: {
+								load: function () {
+									window.setInterval(function () {
+										$.get(API_URL + "/readings/", {
+											start: dataStore.readTimeOfLastGraphUpdate.toISOString()
+										}, function (readings) {
+											for (var r in readings) {
+												if (readings.hasOwnProperty(r)) {
+													// Double check that we don't have a duplicate, although we shouldn't.
+													var findExisting = $.grep(dataStore.readings, function (e) {
+														return e.id == readings[r].id
+													});
 
-												if (findExisting.length === 0) {
-													// OK to add new reading to the data store.
+													if (findExisting.length === 0) {
+														// OK to add new reading to the data store.
 
-													dataStore.readings.push(readings[r]);
-													if (dataStore.indexedSensors[readings[r].sensor]["data_id"] == "air_temp") {
-														var y = readings[r]["value"] / 100.0;
-														if (y < -50.0 || y > 60.0) {
-															y = null;
-														}
+														dataStore.readings.push(readings[r]);
+														if (dataStore.indexedSensors[readings[r].sensor]["data_id"] == "air_temp") {
+															var y = readings[r]["value"] / 100.0;
+															if (y < -50.0 || y > 60.0) {
+																y = null;
+															}
 
-														var station = dataStore.indexedStations[readings[r].station];
-														var stationIndex = 0;
-														for (var s in dataStore.stations) {
-															if (dataStore.stations.hasOwnProperty(s)) {
-																if (dataStore.stations[s]["id"] == station["id"]) {
-																	stationIndex = s;
+															var station = dataStore.indexedStations[readings[r].station];
+															var stationIndex = 0;
+															for (var s in dataStore.stations) {
+																if (dataStore.stations.hasOwnProperty(s)) {
+																	if (dataStore.stations[s]["id"] == station["id"]) {
+																		stationIndex = s;
+																	}
 																}
 															}
-														}
 
-														/*
-															Series should have same index as station since they were
-															pushed at the same time. Shift if we have more than a week's
-															worth of data.
-														*/
-														var shift = this.series[stationIndex].data.length > 672;
-														this.series[stationIndex].addPoint([
-															new Date(readings[r]["read_time"]).getTime(), y
-														], true, shift);
+															/*
+																Series should have same index as station since they were
+																pushed at the same time. Shift if we have more than a
+																week's worth of data.
+															*/
+															var shift = this.series[stationIndex].data.length > (4 * 24 * DAYS_TO_LOAD);
+															this.series[stationIndex].addPoint([
+																new Date(readings[r]["read_time"]).getTime(), y
+															], true, shift);
+														}
 													}
 												}
 											}
-										}
 
-										$.get(API_URL + "/readings/latest/", function (readings) {
-											dataStore.latestReadings = readings;
-											updateWeather(false);
-											// TODO: Edit X axis zoom scale.
-										});
-									}.bind(this));
-								}.bind(this), 5000);
+											// TODO: Data is duplicated here.
+											$.get(API_URL + "/readings/latest/", function (readings) {
+												dataStore.latestReadings = readings;
+												updateWeather(false);
+											});
+
+											dataStore.readTimeOfLastGraphUpdate = new Date(readings[readings.length - 1]["read_time"]);
+										}.bind(this));
+									}.bind(this), 5000);
+								}
 							}
-						}
-					},
-					series: stationSeries
-				});
+						},
+						series: stationSeries
+					});
+				}
 
 				$(".show-on-load").slideDown();
 				$(".status-message").hide();
