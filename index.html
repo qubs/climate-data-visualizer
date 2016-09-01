@@ -313,11 +313,14 @@
 						for (var r in dataStore.readings) {
 							if (dataStore.readings.hasOwnProperty(r)) {
 								if (dataStore.readings[r].station == currentStation["id"]) {
-									dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"].push(dataStore.readings[r]);
+									currentStation["chart_readings"].push(dataStore.readings[r]);
 
 									if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "air_temp") {
-										var y = dataStore.readings[r]["value"] / 100.0;
-										if (y < -60.0 || y > 60.0) {
+										var y = dataStore.readings[r]["value"];
+										if (y !== null) {
+											y /= 100.0;
+										}
+										if ((y < -50.0 || y > 60.0) || dataStore.readings[r]["invalid"]) {
 											y = null;
 										}
 										initialData.push([
