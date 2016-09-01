@@ -344,6 +344,9 @@
 					dataStore.readTimeOfLastGraphUpdate = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
 
 					$("#temp-overview-container").highcharts({
+						title: { text: "" },
+						subtitle: { text: "" },
+
 						xAxis: {
 							type: "datetime",
 							tickPixelInterval: 150,
@@ -371,6 +374,7 @@
 							type: "line",
 							animation: Highcharts.svg,
 							zoomType: "x",
+							spacingTop: 40,
 							events: {
 								load: function () {
 									window.setInterval(function () {
