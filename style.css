@@ -45,6 +45,7 @@ ul.ui-tabs-nav li.ui-tabs-tab {
 }
 ul.ui-tabs-nav li.ui-tabs-tab.ui-tabs-active a {
 	color: #2196F3;
+	transition: color 0.15s;
 }
 ul.ui-tabs-nav li.ui-tabs-tab a {
 	display: block;
@@ -57,6 +58,8 @@ ul.ui-tabs-nav li.ui-tabs-tab a {
 	font-size: 0.9rem;
 	text-transform: uppercase;
 	color: #9E9E9E;
+
+	transition: color 0.15s;
 }
 ul.ui-tabs-nav li.ui-tabs-tab a:focus {
 	outline: none;
