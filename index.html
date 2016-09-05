@@ -277,6 +277,7 @@
 
 			$("#weather-table").stupidtable();
 			$(".show-on-load").hide();
+			$(".graph-range-container").hide();
 
 			var startTime = new Date();
 			startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
@@ -449,6 +450,7 @@
 
 				$(".show-on-load").slideDown();
 				$(".status-message").hide();
+				$(".graph-range-container").slideDown();
 			}, function () {
 				$(".status-message").html("Error loading data.");
 			});
