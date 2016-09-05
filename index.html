@@ -36,7 +36,7 @@
 		const API_URL = "http://localhost:8000";
 		const NA_STRING = '<span class="not-available">N/A</span>';
 		const DAYS_TO_LOAD = 31;
-		const DAYS_TO_SHOW = 7;
+		var DAYS_TO_SHOW = 7;
 
 		var dataStore = {
 			readTimeOfLastGraphUpdate: null,
@@ -50,6 +50,9 @@
 			readings: [],
 			latestReadings: []
 		};
+
+		var tempOverviewChart;
+		var tempOverviewChartOptions;
 
 		Highcharts.setOptions({
 			global : { useUTC : false }
@@ -346,7 +349,7 @@
 				if (dataStore.readings.length > 0) {
 					dataStore.readTimeOfLastGraphUpdate = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
 
-					$("#temp-overview-container").highcharts({
+					tempOverviewChartOptions = {
 						title: { text: "" },
 						subtitle: { text: "" },
 
@@ -374,6 +377,7 @@
 						},
 
 						chart: {
+							renderTo: "temp-overview-container",
 							type: "line",
 							animation: Highcharts.svg,
 							zoomType: "x",
@@ -438,13 +442,43 @@
 							}
 						},
 						series: stationSeries
-					});
+					};
+
+					tempOverviewChart = new Highcharts.Chart(tempOverviewChartOptions);
 				}
 
 				$(".show-on-load").slideDown();
 				$(".status-message").hide();
 			}, function () {
 				$(".status-message").html("Error loading data.");
+			});
+
+			$("body").on("click", ".graph-time-range", function (event) {
+				const $target = $(event.target);
+
+				switch ($target.data("time")) {
+					case "day":
+						DAYS_TO_SHOW = 1;
+						break;
+					case "week":
+						DAYS_TO_SHOW = 7;
+						break;
+					case "month":
+						DAYS_TO_SHOW = 31;
+						break;
+					default:
+						DAYS_TO_SHOW = 7;
+						break;
+				}
+
+				var startDay = new Date();
+				startDay.setDate(startDay.getDate() - DAYS_TO_SHOW);
+
+				tempOverviewChartOptions.xAxis.min = startDay.getTime();
+				tempOverviewChart = new Highcharts.Chart(tempOverviewChartOptions);
+
+				$(".graph-time-range").each(function () { $(this).removeClass("selected"); })
+				$target.addClass("selected");
 			});
 		});
 	</script>
@@ -492,6 +526,11 @@
 			</div>
 		</div>
 		<div id="tabs-2">
+			<ul class="graph-range-container">
+				<li class="graph-range graph-time-range" id="graph-time-range-day" data-time="day">Day</li>
+				<li class="graph-range selected graph-time-range" id="graph-time-range-week" data-time="week">Week</li>
+				<li class="graph-range graph-time-range" id="graph-time-range-month" data-time="month">Month</li>
+			</ul>
 			<div id="temp-overview-container"></div>
 		</div>
 		<div class="status-message">Loading...</div>
