@@ -72,8 +72,8 @@ var QCNChart = function (properties) {
 									}, function (readings) {
 										if (readings.length > 0) {
 											this.addReadings(readings);
-											this.readTimeOfLastGraphUpdate = new Date(readings[0]["read_time"]);
-											console.log(this.readTimeOfLastGraphUpdate);
+											this.readTimeOfLastGraphUpdate = new Date(readings[readings.length - 1]["read_time"]);
+											console.log("Updated readings.");
 										}
 
 										this.processing = false;
