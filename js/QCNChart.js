@@ -17,6 +17,8 @@ var QCNChart = function (properties) {
 
 	this.plotLinesY = properties.plotLinesY || [];
 
+	this.excludeStations = properties.excludeStations || [];
+
 	this.processing = false;
 
 	var dateRange = new Date();
@@ -127,7 +129,7 @@ QCNChart.prototype.addReadings = function (readings) {
 	for (var r in readings) {
 		if (readings.hasOwnProperty(r)) {
 			if (this.centralDataStore.indexedSensors[readings[r].sensor]["data_id"] == this.dataID) {
-				var station = this.centralDataStore.indexedStations[readings[r].station];
+				const station = this.centralDataStore.indexedStations[readings[r].station];
 				var stationIndex = -1;
 				for (var s in this.centralDataStore.stations) {
 					if (this.centralDataStore.stations.hasOwnProperty(s)) {
@@ -140,18 +142,21 @@ QCNChart.prototype.addReadings = function (readings) {
 				if (stationIndex == -1) break;
 
 				var y = readings[r]["value"] / 100.0;
-				if (y < this.bounds[0] || y > this.bounds[1]) {
+				if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]["invalid"]) {
 					y = null;
 				}
 
-				/*
-					Series should have same index as station since they were
-					pushed at the same time. Shift if we have more than a
-					week's worth of data.
-				*/
-				this.chartObject.series[stationIndex].addPoint([
-					new Date(readings[r]["read_time"]).getTime(), y
-				], false, (this.chartObject.series[stationIndex].data.length > maxReadings));
+				// Any explicitly excluded stations should not get new readings.
+				if (this.excludeStations.indexOf(station["id"]) === -1) {
+					/*
+						Series should have same index as station since they were
+						pushed at the same time. Shift if we have more than a
+						week's worth of data.
+					*/
+					this.chartObject.series[stationIndex].addPoint([
+						new Date(readings[r]["read_time"]).getTime(), y
+					], false, (this.chartObject.series[stationIndex].data.length > maxReadings));
+				}
 			}
 		}
 	}
