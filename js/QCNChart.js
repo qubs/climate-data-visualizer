@@ -156,5 +156,9 @@ QCNChart.prototype.addReadings = function (readings) {
 		}
 	}
 
+	var dateRange = new Date();
+	dateRange.setDate(dateRange.getDate() - this.daysToShow);
+
+	this.chartObject.xAxis[0].setExtremes(dateRange.getTime(), (new Date()).getTime());
 	this.chartObject.redraw();
 };
