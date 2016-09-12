@@ -27,14 +27,22 @@
 	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
 	<script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
 	<script type="text/javascript" src="bower_components/highcharts/highstock.js"></script>
+	<!-- Include Highcharts' experimental boost module to increase performance. -->
+	<script type="text/javascript" src="bower_components/highcharts/modules/boost.js"></script>
 	<script type="text/javascript" src="bower_components/jquery-stupid-table/stupidtable.min.js"></script>
 	<script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
 
+	<script type="text/javascript" src="js/QCNChart.js"></script>
+
 	<script type="text/javascript">
-		const API_URL = "http://climate.qubs.ca/api/";
-		var stations = [];
+		const API_URL = "http://localhost:8000";
+		const NA_STRING = '<span class="not-available">N/A</span>';
+		const DAYS_TO_LOAD = 31;
+		var DAYS_TO_SHOW = 7;
 
 		var dataStore = {
+			readTimeOfLastGraphUpdate: null,
+
 			stations: [],
 			indexedStations: [],
 
@@ -45,11 +53,67 @@
 			latestReadings: []
 		};
 
+		var tempOverviewChart;
+		var rhOverviewChart;
+
 		Highcharts.setOptions({
-			global : {
-				useUTC : false
-			}
+			global : { useUTC : false }
 		});
+		Highcharts.theme = {
+			colors: ["#F44336", "#9C27B0", "#03A9F4", "#CDDC39", "#FF9800", "#607D8B",
+					"#009688", "#FFEB3B", "#3F51B5"],
+			chart: {
+				backgroundColor: "#FEFEFE"
+			},
+			title: {
+				style: {
+					color: "#424242",
+					font: '600 1rem "Open Sans", sans-serif'
+				}
+			},
+			subtitle: {
+				style: {
+					color: "#9E9E9E",
+					font: 'normal 0.8rem "Open Sans", sans-serif'
+				}
+			},
+
+			xAxis: {
+				gridLineColor: "#EEEEEE",
+				gridLineWidth: 1,
+
+				lineColor: "#E0E0E0",
+				tickColor: "#E0E0E0",
+
+				labels: {
+					style: { font: 'normal 0.7rem "Open Sans", sans-serif' }
+				}
+			},
+			yAxis: {
+				gridLineColor: "#EEEEEE",
+				gridLineWidth: 1,
+				labels: {
+					style: { font: 'normal 0.7rem "Open Sans", sans-serif' }
+				}
+			},
+
+			legend: {
+				itemStyle: {
+					font: '9pt "Open Sans", sans-serif',
+					color: "#424242"
+				},
+				itemHoverStyle:{
+					color: "#757575"
+				}
+			},
+
+			scrollbar: {
+				barBackgroundColor: "#CFD8DC"
+			},
+		};
+
+		// Apply the theme
+		Highcharts.setOptions(Highcharts.theme);
 
 		$(window).resize(function () {
 			$("#temp-overview-container").css("height", ($(window).height() - 16 - 90).toString() + "px");
@@ -73,36 +137,43 @@
 					value: undefined,
 					suffix: "&deg;C",
 					bounds: [-50, 60],
+					decimals: 2
 				},
 				"rh": {
 					value: undefined,
 					suffix: "%",
-					bounds: [0, 100]
+					bounds: [0, 100],
+					decimals: 2
 				},
 				"baro": {
 					value: undefined,
 					suffix: " hPa",
-					bounds: [300, 1200]
+					bounds: [300, 1200],
+					decimals: 2
 				},
 				"wind_speed": {
 					value: undefined,
 					suffix: " m/s",
-					bounds: [0, 90]
+					bounds: [0, 90],
+					decimals: 2
 				},
 				"mean_wind_speed": {
 					value: undefined,
 					suffix: " m/s",
-					bounds: [0, 90]
+					bounds: [0, 90],
+					decimals: 2
 				},
 				"wind_dir": {
 					value: undefined,
 					suffix: "&deg;",
-					bounds: [0, 359.9]
+					bounds: [0, 359.9],
+					decimals: 2
 				},
 				"mean_wind_direction": {
 					value: undefined,
 					suffix: "&deg;",
-					bounds: [0, 359.9]
+					bounds: [0, 359.9],
+					decimals: 2
 				}
 			};
 
@@ -128,18 +199,20 @@
 							}))[0];
 							if (readings[r].value === undefined) {
 								// If nothing was found for that sensor on the station, create a nice N/A message.
-								readings[r].value = '<span class="not-available">N/A</span>';
+								readings[r].value = NA_STRING;
 							} else {
 								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25) {
 									// Queen's Point has a faulty RH sensor.
-									readings[r].value = '<span class="not-available">N/A</span>';
+									readings[r].value = NA_STRING;
 								} else {
-									var realTemp = readings[r].value.value / 100.0;
-									if (realTemp > readings[r].bounds[0] && realTemp < readings[r].bounds[1]) {
-										allValues[r].push(realTemp);
+									var value = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
+									if (value > readings[r].bounds[0] && value < readings[r].bounds[1]) {
+										allValues[r].push(value);
 									}
-									readings[r].value = (Math.round(realTemp * 10.0) / 10.0).toString()
-										+ readings[r].suffix;
+
+									// Round off to 1 decimal place and set the value string with the suffix.
+									const rp = Math.pow(10.0, (readings[r].decimals - 1));
+									readings[r].value = (Math.round(value * rp) / rp).toString() + readings[r].suffix;
 								}
 							}
 						}
@@ -166,11 +239,13 @@
 							+ '<td class="station-wind-speed">' + wind_speed + '</td>'
 							+ '<td class="station-wind-dir">' + wind_dir + '</td></tr>');
 					} else {
-						$("#station-" + st["id"]).children(".station-air-temp").html(readings["air_temp"].value);
-						$("#station-" + st["id"]).children(".station-rh").html(readings["rh"].value);
-						$("#station-" + st["id"]).children(".station-baro").html(readings["baro"].value);
-						$("#station-" + st["id"]).children(".station-wind-speed").html(wind_speed);
-						$("#station-" + st["id"]).children(".station-wind-dir").html(wind_dir);
+						// TODO: Devise a way to avoid "N/A" while data is updating.
+						var $stationRow = $("#station-" + st["id"]);
+						$stationRow.children(".station-air-temp").html(readings["air_temp"].value);
+						$stationRow.children(".station-rh").html(readings["rh"].value);
+						$stationRow.children(".station-baro").html(readings["baro"].value);
+						$stationRow.children(".station-wind-speed").html(wind_speed);
+						$stationRow.children(".station-wind-dir").html(wind_dir);
 					}
 				}
 			}
@@ -179,7 +254,7 @@
 			$(window).resize();
 
 			var lastUpdated = moment(dataStore.latestReadings[dataStore.latestReadings.length - 1]["created"]);
-			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm:ss A");
+			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm A");
 			$("#weather-last-update").html("Data updated " + lastUpdatedString + ".");
 
 			var temperatureAverage = allValues["air_temp"].reduce(function (total, number) {
@@ -196,8 +271,18 @@
 		$(document).ready(function () {
 			$(window).resize();
 
-			$("#tabs").tabs();
+			$("#tabs").tabs({
+				activate: function (event, ui) {
+					window.location.hash = ui.newTab.children("a").first().attr("href");
+				}
+			});
+
 			$("#weather-table").stupidtable();
+			$(".show-on-load").hide();
+			$(".graph-range-container").hide();
+
+			var startTime = new Date();
+			startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
 
 			$.when(
 				$.get(API_URL + "/stations/", function (stations) {
@@ -211,7 +296,9 @@
 						}
 					}
 				}),
-				$.get(API_URL + "/readings/", function (readings) {
+				$.get(API_URL + "/readings/", {
+					start: startTime.toISOString()
+				}, function (readings) {
 					dataStore.readings = readings;
 				}),
 				$.get(API_URL + "/readings/latest/", function (readings) {
@@ -219,27 +306,44 @@
 				})
 			).then(function () {
 				var stationSeries = [];
+				var stationSeriesRH = [];
 
 				for (var s in dataStore.stations) {
 					if (dataStore.stations.hasOwnProperty(s)) {
+						// Reference the station's information from an object indexed with the station's web ID.
 						dataStore.indexedStations[dataStore.stations[s]["id"]] = dataStore.stations[s];
 						dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"] = [];
 
 						const currentStation = dataStore.indexedStations[dataStore.stations[s]["id"]];
 
 						var initialData = [];
+						var initialDataRH = [];
 
 						for (var r in dataStore.readings) {
 							if (dataStore.readings.hasOwnProperty(r)) {
 								if (dataStore.readings[r].station == currentStation["id"]) {
-									dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"].push(dataStore.readings[r]);
+									currentStation["chart_readings"].push(dataStore.readings[r]);
 
 									if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "air_temp") {
-										var y = dataStore.readings[r]["value"] / 100.0;
-										if (y < -60.0 || y > 60.0) {
+										var y = dataStore.readings[r]["value"];
+										if (y !== null) {
+											y /= 100.0;
+										}
+										if ((y < -50.0 || y > 60.0) || dataStore.readings[r]["invalid"]) {
 											y = null;
 										}
 										initialData.push([
+											new Date(dataStore.readings[r]["read_time"]).getTime(), y
+										]);
+									} else if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "rh") {
+										var y = dataStore.readings[r]["value"];
+										if (y !== null) {
+											y /= 100.0;
+										}
+										if ((y < 0 || y > 100.0) || dataStore.readings[r]["invalid"]) {
+											y = null;
+										}
+										initialDataRH.push([
 											new Date(dataStore.readings[r]["read_time"]).getTime(), y
 										]);
 									}
@@ -251,109 +355,113 @@
 							name: dataStore.stations[s].name,
 							data: initialData
 						});
+
+						if (currentStation["id"] == 6) {
+							// Queen's Point RH sensor is not functional.
+							initialDataRH = [];
+						}
+						stationSeriesRH.push({
+							name: dataStore.stations[s].name,
+							data: initialDataRH
+						});
 					}
 				}
 
 				updateWeather(true);
 
-				var yesterday = new Date()
-				yesterday.setDate(yesterday.getDate() - 1);
+				var startDay = new Date();
+				startDay.setDate(startDay.getDate() - DAYS_TO_SHOW);
 
-				$("#temp-overview-container").highcharts({
-					title: { text: "Temperature" },
-					subtitle: { text: "All QUBS Climate Stations" },
+				if (dataStore.readings.length > 0) {
+					dataStore.readTimeOfLastGraphUpdate = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
 
-					xAxis: {
-						type: "datetime",
-						tickPixelInterval: 150,
-						min: yesterday.getTime(),
-						max: new Date().getTime()
-					},
-					yAxis: {
-						title: {
-							text: "Temperature (°C)"
-						},
-						plotLines: [{
-							value: 0,
-							width: 1,
-							color: "#FF5722"
+					tempOverviewChart = new QCNChart({
+						daysToShow: 7,
+						daysToLoad: 31,
+
+						yAxisLabel: "Temperature (°C)",
+						valueSuffix: "°C",
+
+						dataID: "air_temp",
+
+						container: "temp-overview-container",
+						centralDataStore: dataStore,
+
+						stationSeries: stationSeries,
+						bounds: [-50, 60],
+					});
+
+					rhOverviewChart = new QCNChart({
+						daysToShow: 7,
+						daysToLoad: 31,
+
+						yAxisLabel: "Relative Humidity (%)",
+						valueSuffix: "%",
+
+						dataID: "rh",
+
+						container: "rh-overview-container",
+						centralDataStore: dataStore,
+
+						stationSeries: stationSeriesRH,
+						bounds: [0, 100],
+
+						excludeStations: [6],
+
+						plotLinesY: [{
+							color: "#EEEEEE",
+							value: 100,
+							width: 2
 						}]
-					},
-					tooltip: {
-						valueSuffix: "°C"
-					},
-					scrollbar: {
-						enabled: true
-					},
+					});
+				}
 
-					plotOptions: {
-						series: {
-							marker: {
-								enabled: false
-							}
-						}
-					},
+				$(".show-on-load").slideDown();
+				$(".status-message").hide();
+				$(".graph-range-container").slideDown();
+			}, function () {
+				$(".status-message").html("Error loading data.");
+			});
 
-					chart: {
-						type: "line",
-						animation: Highcharts.svg,
-						zoomType: "x",
-						events: {
-							load: function () {
-								window.setInterval(function () {
-									$.get(API_URL + "/readings/", function (readings) {
-										for (var r in readings) {
-											if (readings.hasOwnProperty(r)) {
-												var findExisting = $.grep(dataStore.readings, function (e) {
-													return e.id == readings[r].id
-												});
+			window.setInterval(function () {
+				$.get(API_URL + "/settings/receiving_data/", function (receivingData) {
+					if (receivingData.value === "0") {
+						$.get(API_URL + "/readings/latest/", function (readings) {
+							dataStore.latestReadings = readings;
+							updateWeather(false);
+						});
+					}
+				}.bind(this));
+			}.bind(this), 5000);
 
-												if (findExisting.length === 0) {
-													// OK to add new reading to the data store.
+			$("body").on("click", ".graph-time-range", function (event) {
+				const $target = $(event.target);
 
-													dataStore.readings.push(readings[r]);
-													if (dataStore.indexedSensors[readings[r].sensor]["data_id"] == "air_temp") {
-														var y = readings[r]["value"] / 100.0;
-														if (y < -50.0 || y > 60.0) {
-															y = null;
-														}
+				var daysToShow = 7;
 
-														var station = dataStore.indexedStations[readings[r].station];
-														var stationIndex = 0;
-														for (var s in dataStore.stations) {
-															if (dataStore.stations.hasOwnProperty(s)) {
-																if (dataStore.stations[s]["id"] == station["id"]) {
-																	stationIndex = s;
-																}
-															}
-														}
+				switch ($target.data("time")) {
+					case "day":
+						daysToShow = 1;
+						break;
+					case "week":
+						daysToShow = 7;
+						break;
+					case "month":
+						daysToShow = 31;
+						break;
+				}
 
-														/*
-															Series should have same index as station since they were
-															pushed at the same time. Shift if we have more than a day's
-															worth of data.
-														*/
-														var shift = this.series[stationIndex].data.length > 96;
-														this.series[stationIndex].addPoint([
-															new Date(readings[r]["read_time"]).getTime(), y
-														], true, shift);
-													}
-												}
-											}
-										}
+				var startDay = new Date();
+				startDay.setDate(startDay.getDate() - daysToShow);
 
-										$.get(API_URL + "/readings/latest/", function (readings) {
-											dataStore.latestReadings = readings;
-											updateWeather(false);
-											// TODO: Edit X axis zoom scale.
-										});
-									}.bind(this));
-								}.bind(this), 5000);
-							}
-						}
-					},
-					series: stationSeries
-				});
+				if ($target.parents("#tab-temperature").length !== 0) {
+					tempOverviewChart.setDaysToShow(daysToShow);
+				} else {
+					rhOverviewChart.setDaysToShow(daysToShow);
+				}
+
+				$target.parent().find(".graph-time-range").each(function () { $(this).removeClass("selected"); })
+				$target.addClass("selected");
 			});
 		});
 	</script>
@@ -373,33 +481,50 @@
 	</div>
 	<div id="tabs">
 		<ul>
-			<li><a href="#tabs-1">Overview</a></li>
-			<li><a href="#tabs-2">Temperature</a></li>
+			<li><a href="#tab-overview">Overview</a></li>
+			<li><a href="#tab-temperature">Temperature</a></li>
+			<li><a href="#tab-humidity">Relative Humidity</a></li>
 		</ul>
-		<div id="tabs-1">
-			<div id="weather-overview">
-				It is currently around <span id="weather-temperature">XX&deg;C</span> on QUBS properties, <br>
-				with a humidity level of about <span id="weather-humidity">YY%</span>.
-				<div id="weather-last-update">Last Updated</div>
-			</div>
-			<div id="weather-table-container">
-				<table id="weather-table">
-					<thead>
-						<tr>
-							<th data-sort="string-ins" class="sortable">Station</th>
-							<th>Air Temperature</th>
-							<th>Relative Humidity</th>
-							<th>Air Pressure</th>
-							<th>Wind Speed</th>
-							<th>Wind Direction</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
+		<div id="tab-overview">
+			<div class="show-on-load">
+				<div id="weather-overview">
+					It is currently around <span id="weather-temperature">XX&deg;C</span> on QUBS properties, <br>
+					with a humidity level of about <span id="weather-humidity">YY%</span>.
+					<div id="weather-last-update">Last Updated</div>
+				</div>
+				<div id="weather-table-container">
+					<table id="weather-table">
+						<thead>
+							<tr>
+								<th data-sort="string-ins" class="sortable">Station</th>
+								<th>Air Temperature</th>
+								<th>Relative Humidity</th>
+								<th>Air Pressure</th>
+								<th>Wind Speed</th>
+								<th>Wind Direction</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
 			</div>
 		</div>
-		<div id="tabs-2">
-			<div id="temp-overview-container"></div>
+		<div id="tab-temperature">
+			<ul class="graph-range-container">
+				<li class="graph-range graph-time-range" id="graph-time-range-day" data-time="day">Day</li>
+				<li class="graph-range selected graph-time-range" id="graph-time-range-week" data-time="week">Week</li>
+				<li class="graph-range graph-time-range" id="graph-time-range-month" data-time="month">Month</li>
+			</ul>
+			<div id="temp-overview-container" class="graph-container"></div>
 		</div>
+		<div id="tab-humidity">
+			<ul class="graph-range-container">
+				<li class="graph-range graph-time-range" id="graph-time-range-day" data-time="day">Day</li>
+				<li class="graph-range selected graph-time-range" id="graph-time-range-week" data-time="week">Week</li>
+				<li class="graph-range graph-time-range" id="graph-time-range-month" data-time="month">Month</li>
+			</ul>
+			<div id="rh-overview-container" class="graph-container"></div>
+		</div>
+		<div class="status-message">Loading...</div>
 </body>
 </html>

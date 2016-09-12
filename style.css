@@ -39,16 +39,17 @@ ul.ui-tabs-nav li.ui-tabs-tab {
 	display: inline-block;
 	height: 60px;
 	box-sizing: border-box;
+	margin-left: 1.5rem;
 
 	font-size: 1rem;
 }
 ul.ui-tabs-nav li.ui-tabs-tab.ui-tabs-active a {
 	color: #2196F3;
+	transition: color 0.15s;
 }
 ul.ui-tabs-nav li.ui-tabs-tab a {
 	display: block;
 	height: 60px;
-	padding: 0 1.5rem;
 
 	line-height: 60px;
 	text-decoration: none;
@@ -57,6 +58,8 @@ ul.ui-tabs-nav li.ui-tabs-tab a {
 	font-size: 0.9rem;
 	text-transform: uppercase;
 	color: #9E9E9E;
+
+	transition: color 0.15s;
 }
 ul.ui-tabs-nav li.ui-tabs-tab a:focus {
 	outline: none;
@@ -66,6 +69,19 @@ div.ui-tabs-panel {
 	position: fixed;
 	top: 90px; left: 0; right: 0; bottom: 0;
 	overflow-y: auto;
+}
+
+.status-message {
+	position: fixed;
+	left: 50%; top: calc(50% + 45px);
+	margin-left: -100px; margin-top: -10px;
+	width: 200px;
+	min-height: 20px;
+
+	font-family: "Open Sans", sans-serif;
+	line-height: 19px;
+	text-align: center;
+	color: #9E9E9E;
 }
 
 #weather-overview {
@@ -130,7 +146,35 @@ table tbody tr:nth-child(even) {
 	background-color: #FAFAFA;
 }
 
-#temp-overview-container {
+.graph-container {
 	width: 100%; height: 600px;
 	box-sizing: border-box;
+}
+
+.graph-range-container {
+	position: absolute;
+	top: 9px;
+	right: 10px;
+	z-index: 95;
+
+	padding: 0; margin: 0;
+
+	list-style: none;
+}
+.graph-range-container li {
+	display: inline-block;
+	margin-left: 0.6rem;
+
+	font-family: "Open Sans", sans-serif;
+	font-weight: 600;
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	color: #9E9E9E;
+
+	cursor: pointer;
+	transition: color 0.15s;
+}
+.graph-range-container li.selected {
+	color: #F44336;
+	transition: color 0.15s;
 }
