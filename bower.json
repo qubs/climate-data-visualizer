@@ -3,7 +3,6 @@
   "authors": [
     "David Lougheed <david.lougheed@gmail.com>"
   ],
-  "description": "A visualization dashboard for the Queen's University Biological Station's climate data.",
   "description": "A visualization tool for the Queen's University Biological Station's climate data.",
   "main": "index.html",
   "keywords": [
