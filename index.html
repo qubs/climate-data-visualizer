@@ -310,6 +310,7 @@
 
 				for (var s in dataStore.stations) {
 					if (dataStore.stations.hasOwnProperty(s)) {
+						// Reference the station's information from an object indexed with the station's web ID.
 						dataStore.indexedStations[dataStore.stations[s]["id"]] = dataStore.stations[s];
 						dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"] = [];
 
@@ -404,6 +405,8 @@
 
 						stationSeries: stationSeriesRH,
 						bounds: [0, 100],
+
+						excludeStations: [6],
 
 						plotLinesY: [{
 							color: "#EEEEEE",
