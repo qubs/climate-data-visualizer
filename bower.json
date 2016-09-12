@@ -1,5 +1,6 @@
 {
   "name": "qubs-climate-data-visualizer",
+  "version": "0.2.0",
   "authors": [
     "David Lougheed <david.lougheed@gmail.com>"
   ],
