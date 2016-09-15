@@ -300,7 +300,8 @@
 					}
 				}),
 				$.get(API_URL + "/readings/", {
-					start: startTime.toISOString()
+					start: startTime.toISOString(),
+					sensors: [1, 2, 20, 25]
 				}, function (readings) {
 					dataStore.readings = readings;
 				}),
