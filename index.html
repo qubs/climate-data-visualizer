@@ -332,9 +332,10 @@
 										var y = dataStore.readings[r]["value"];
 										if (y !== null) {
 											y /= 100.0;
-										}
-										if ((y < -50.0 || y > 60.0) || dataStore.readings[r]["invalid"]) {
-											y = null;
+
+											if ((y < -50.0 || y > 60.0) || dataStore.readings[r]["invalid"]) {
+												y = null;
+											}
 										}
 										initialData.push([
 											new Date(dataStore.readings[r]["read_time"]).getTime(), y

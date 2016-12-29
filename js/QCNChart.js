@@ -141,9 +141,13 @@ QCNChart.prototype.addReadings = function (readings) {
 
 				if (stationIndex == -1) break;
 
-				var y = readings[r]["value"] / 100.0;
-				if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]["invalid"]) {
-					y = null;
+				var y = readings[r]["value"];
+				if (y !== null)  {
+					y = y / 100.0;
+
+					if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]["invalid"]) {
+						y = null;
+					}
 				}
 
 				// Any explicitly excluded stations should not get new readings.
