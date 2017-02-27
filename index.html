@@ -112,7 +112,7 @@
 
 			scrollbar: {
 				barBackgroundColor: "#CFD8DC"
-			},
+			}
 		};
 
 		// Apply the theme
@@ -132,7 +132,7 @@
 				"mean_wind_speed": [],
 				"wind_dir": [],
 				"mean_wind_direction": []
-			}
+			};
 
 			// Initialize array used for table values.
 			var readings = {
@@ -182,7 +182,7 @@
 
 			if (first) {
 				// Clear contents of table.
-				$("#weather-table tbody").html("");
+				$("#weather-table").find("tbody").html("");
 			}
 
 			for (var s in dataStore.stations) {
@@ -190,7 +190,7 @@
 					const st = dataStore.stations[s];
 
 					const latestReadings = $.grep(dataStore.latestReadings, function (e) {
-						return e.station == st["id"]
+						return e["station"] == st["id"];
 					});
 
 					for (var r in readings) {
@@ -198,7 +198,7 @@
 							// Set proper values for table display.
 
 							readings[r].value = ($.grep(latestReadings, function (e) {
-								return dataStore.indexedSensors[e.sensor]["data_id"] === r;
+								return dataStore.indexedSensors[e["sensor"]]["data_id"] === r;
 							}))[0];
 							if (readings[r].value === undefined) {
 								// If nothing was found for that sensor on the station, create a nice N/A message.
@@ -234,7 +234,7 @@
 					}
 
 					if (first) {
-						$("#weather-table tbody").append('<tr id="station-' + st["id"] + '">'
+						$("#weather-table").find("tbody").append('<tr id="station-' + st["id"] + '">'
 							+ '<td class="station-name">' + st["name"] + '</td>'
 							+ '<td class="station-air-temp">' + readings["air_temp"].value + '</td>'
 							+ '<td class="station-rh">' + readings["rh"].value + '</td>'
@@ -269,9 +269,9 @@
 				return total + number;
 			}, 0) / allValues["rh"].length;
 			$("#weather-humidity").html(Math.round(humidityAverage).toString() + "%");
-		}
+		};
 
-		$(document).ready(function () {
+		$(function () {
 			$(window).resize();
 
 			$("#tabs").tabs({
@@ -392,8 +392,8 @@
 						container: "temp-overview-container",
 						centralDataStore: dataStore,
 
-						stationSeries: stationSeries,
-						bounds: [-50, 60],
+						stationSeries: stationSeries2["air_temp"],
+						bounds: [-50, 60]
 					});
 
 					rhOverviewChart = new QCNChart({
@@ -465,7 +465,7 @@
 					rhOverviewChart.setDaysToShow(daysToShow);
 				}
 
-				$target.parent().find(".graph-time-range").each(function () { $(this).removeClass("selected"); })
+				$target.parent().find(".graph-time-range").each(function () { $(this).removeClass("selected"); });
 				$target.addClass("selected");
 			});
 		});
@@ -516,20 +516,21 @@
 		</div>
 		<div id="tab-temperature">
 			<ul class="graph-range-container">
-				<li class="graph-range graph-time-range" id="graph-time-range-day" data-time="day">Day</li>
-				<li class="graph-range selected graph-time-range" id="graph-time-range-week" data-time="week">Week</li>
-				<li class="graph-range graph-time-range" id="graph-time-range-month" data-time="month">Month</li>
+				<li class="graph-range graph-time-range" data-time="day">Day</li>
+				<li class="graph-range selected graph-time-range" data-time="week">Week</li>
+				<li class="graph-range graph-time-range" data-time="month">Month</li>
 			</ul>
 			<div id="temp-overview-container" class="graph-container"></div>
 		</div>
 		<div id="tab-humidity">
 			<ul class="graph-range-container">
-				<li class="graph-range graph-time-range" id="graph-time-range-day" data-time="day">Day</li>
-				<li class="graph-range selected graph-time-range" id="graph-time-range-week" data-time="week">Week</li>
-				<li class="graph-range graph-time-range" id="graph-time-range-month" data-time="month">Month</li>
+				<li class="graph-range graph-time-range" data-time="day">Day</li>
+				<li class="graph-range selected graph-time-range" data-time="week">Week</li>
+				<li class="graph-range graph-time-range" data-time="month">Month</li>
 			</ul>
 			<div id="rh-overview-container" class="graph-container"></div>
 		</div>
 		<div class="status-message">Loading...</div>
+	</div>
 </body>
 </html>
