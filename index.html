@@ -233,6 +233,8 @@
 						if (readings.hasOwnProperty(r)) {
 							// Set proper values for table display.
 
+							const rc = r;
+
 							readings[r].value = ($.grep(latestReadings, function (e) {
 								return dataStore.indexedSensors[e["sensor"]]["data_id"] === rc;
 							}))[0];
@@ -241,8 +243,10 @@
 								// If nothing was found for that sensor on the station, create a nice N/A message.
 								readings[r].value = NA_STRING;
 							} else {
-								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25) {
-									// Queen's Point has a faulty RH sensor.
+								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25
+									|| st["name"] === "Leroi Swamp" && readings[r].value["sensor"] === 1
+									|| st["name"] === "Leroi Swamp" && readings[r].value["sensor"] === 2) {
+									// Various faulty sensors.
 									readings[r].value = NA_STRING;
 								} else {
 									var value = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
@@ -370,47 +374,56 @@
 								if (dataStore.readings[r]["station"] === currentStation["id"]) {
 									currentStation["chart_readings"].push(dataStore.readings[r]);
 
-									if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "air_temp") {
-										var y = dataStore.readings[r]["value"];
-										if (y !== null) {
-											y /= 100.0;
+									const sensorType = dataStore.indexedSensors[dataStore.readings[r]["sensor"]]["data_id"];
 
-											if ((y < -50.0 || y > 60.0) || dataStore.readings[r]["invalid"]) {
+									var y = dataStore.readings[r]["value"];
+									if (y !== null) {
+										y /= 100.0;
+
+										if (DATA_TYPES[sensorType] !== undefined) {
+											if ((y < DATA_TYPES[sensorType]["bounds"][0]
+												 || y > DATA_TYPES[sensorType]["bounds"][1])
+												|| dataStore.readings[r]["invalid"]) {
 												y = null;
 											}
 										}
-										initialData.push([
-											new Date(dataStore.readings[r]["read_time"]).getTime(), y
-										]);
-									} else if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "rh") {
-										var y = dataStore.readings[r]["value"];
-										if (y !== null) {
-											y /= 100.0;
-										}
-										if ((y < 0 || y > 100.0) || dataStore.readings[r]["invalid"]) {
-											y = null;
-										}
-										initialDataRH.push([
-											new Date(dataStore.readings[r]["read_time"]).getTime(), y
-										]);
 									}
+
+									initialData[sensorType].push([
+										new Date(dataStore.readings[r]["read_time"]).getTime(), y
+									]);
 								}
 							}
 						}
 
-						stationSeries.push({
-							name: dataStore.stations[s].name,
-							data: initialData
-						});
-
-						if (currentStation["id"] == 6) {
-							// Queen's Point RH sensor is not functional.
-							initialDataRH = [];
+						if (currentStation["id"] === 3) {
+							// Leroi Swamp RH sensor is not functional.
+							initialData["air_temp"] = [];
 						}
-						stationSeriesRH.push({
-							name: dataStore.stations[s].name,
-							data: initialDataRH
-						});
+
+						if (currentStation["id"] === 3) {
+							// Leroi Swamp RH sensor is not functional.
+							initialData["rh"] = [];
+						}
+
+						if (currentStation["id"] === 6) {
+							// Queen's Point RH sensor is not functional.
+							initialData["rh"] = [];
+						}
+
+						for (var i in initialData) {
+							if (initialData.hasOwnProperty(i)) {
+								if (stationSeries[i] === undefined) {
+									stationSeries[i] = [];
+								}
+
+								stationSeries[i].push({
+									name: dataStore.stations[s].name,
+									data: initialData[i],
+									stationIndex: s
+								});
+							}
+						}
 					}
 				}
 
