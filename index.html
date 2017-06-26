@@ -190,7 +190,7 @@
 					const st = dataStore.stations[s];
 
 					const latestReadings = $.grep(dataStore.latestReadings, function (e) {
-						return e["station"] == st["id"];
+						return e["station"] === st["id"];
 					});
 
 					for (var r in readings) {
@@ -198,9 +198,10 @@
 							// Set proper values for table display.
 
 							readings[r].value = ($.grep(latestReadings, function (e) {
-								return dataStore.indexedSensors[e["sensor"]]["data_id"] === r;
+								return dataStore.indexedSensors[e["sensor"]]["data_id"] === rc;
 							}))[0];
-							if (readings[r].value === undefined) {
+
+							if (readings[r].value === undefined || readings[r].value === null) {
 								// If nothing was found for that sensor on the station, create a nice N/A message.
 								readings[r].value = NA_STRING;
 							} else {
@@ -325,7 +326,7 @@
 
 						for (var r in dataStore.readings) {
 							if (dataStore.readings.hasOwnProperty(r)) {
-								if (dataStore.readings[r].station == currentStation["id"]) {
+								if (dataStore.readings[r]["station"] === currentStation["id"]) {
 									currentStation["chart_readings"].push(dataStore.readings[r]);
 
 									if (dataStore.indexedSensors[dataStore.readings[r].sensor]["data_id"] == "air_temp") {

@@ -74,7 +74,8 @@ var QCNChart = function (properties) {
 									}, function (readings) {
 										if (readings.length > 0) {
 											this.addReadings(readings);
-											this.readTimeOfLastGraphUpdate = new Date(readings[readings.length - 1]["read_time"]);
+											this.readTimeOfLastGraphUpdate
+												= new Date(readings[readings.length - 1]["read_time"]);
 											console.log("Updated readings.");
 										}
 
@@ -110,7 +111,7 @@ var QCNChart = function (properties) {
 QCNChart.prototype.refreshChart = function () {
 	this.chartOptions.xAxis.max = (new Date()).getTime();
 	this.chartObject = new Highcharts.Chart(this.chartOptions);
-}
+};
 
 QCNChart.prototype.setDaysToShow = function (days) {
 	this.daysToShow = days;
@@ -128,18 +129,18 @@ QCNChart.prototype.addReadings = function (readings) {
 
 	for (var r in readings) {
 		if (readings.hasOwnProperty(r)) {
-			if (this.centralDataStore.indexedSensors[readings[r].sensor]["data_id"] == this.dataID) {
-				const station = this.centralDataStore.indexedStations[readings[r].station];
+			if (this.centralDataStore.indexedSensors[readings[r]["sensor"]]["data_id"] === this.dataID) {
+				const station = this.centralDataStore.indexedStations[readings[r]["station"]];
 				var stationIndex = -1;
 				for (var s in this.centralDataStore.stations) {
 					if (this.centralDataStore.stations.hasOwnProperty(s)) {
-						if (this.centralDataStore.stations[s]["id"] == station["id"]) {
+						if (this.centralDataStore.stations[s]["id"] === station["id"]) {
 							stationIndex = s;
 						}
 					}
 				}
 
-				if (stationIndex == -1) break;
+				if (stationIndex === -1) break;
 
 				var y = readings[r]["value"];
 				if (y !== null)  {
