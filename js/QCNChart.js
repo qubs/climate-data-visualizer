@@ -15,6 +15,7 @@ var QCNChart = function (properties) {
 	this.stationSeries = properties.stationSeries || [];
 	this.bounds = properties.bounds || [-999999, 999999];
 
+	this.plotLinesX = properties.plotLinesX || [];
 	this.plotLinesY = properties.plotLinesY || [];
 
 	this.excludeStations = properties.excludeStations || [];
@@ -74,7 +75,8 @@ var QCNChart = function (properties) {
 									}, function (readings) {
 										if (readings.length > 0) {
 											this.addReadings(readings);
-											this.readTimeOfLastGraphUpdate = new Date(readings[readings.length - 1]["read_time"]);
+											this.readTimeOfLastGraphUpdate
+												= new Date(readings[readings.length - 1]["read_time"]);
 											console.log("Updated readings.");
 										}
 
@@ -110,7 +112,7 @@ var QCNChart = function (properties) {
 QCNChart.prototype.refreshChart = function () {
 	this.chartOptions.xAxis.max = (new Date()).getTime();
 	this.chartObject = new Highcharts.Chart(this.chartOptions);
-}
+};
 
 QCNChart.prototype.setDaysToShow = function (days) {
 	this.daysToShow = days;
@@ -128,22 +130,26 @@ QCNChart.prototype.addReadings = function (readings) {
 
 	for (var r in readings) {
 		if (readings.hasOwnProperty(r)) {
-			if (this.centralDataStore.indexedSensors[readings[r].sensor]["data_id"] == this.dataID) {
-				const station = this.centralDataStore.indexedStations[readings[r].station];
+			if (this.centralDataStore.indexedSensors[readings[r]["sensor"]]["data_id"] === this.dataID) {
+				const station = this.centralDataStore.indexedStations[readings[r]["station"]];
 				var stationIndex = -1;
 				for (var s in this.centralDataStore.stations) {
 					if (this.centralDataStore.stations.hasOwnProperty(s)) {
-						if (this.centralDataStore.stations[s]["id"] == station["id"]) {
+						if (this.centralDataStore.stations[s]["id"] === station["id"]) {
 							stationIndex = s;
 						}
 					}
 				}
 
-				if (stationIndex == -1) break;
+				if (stationIndex === -1) break;
 
-				var y = readings[r]["value"] / 100.0;
-				if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]["invalid"]) {
-					y = null;
+				var y = readings[r]["value"];
+				if (y !== null)  {
+					y = y / 100.0;
+
+					if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]["invalid"]) {
+						y = null;
+					}
 				}
 
 				// Any explicitly excluded stations should not get new readings.
@@ -153,9 +159,22 @@ QCNChart.prototype.addReadings = function (readings) {
 						pushed at the same time. Shift if we have more than a
 						week's worth of data.
 					*/
-					this.chartObject.series[stationIndex].addPoint([
-						new Date(readings[r]["read_time"]).getTime(), y
-					], false, (this.chartObject.series[stationIndex].data.length > maxReadings));
+
+					var seriesIndex = -1;
+
+					for (var c in this.chartObject.series) {
+						if (this.chartObject.series.hasOwnProperty(c)) {
+							if (stationIndex === this.chartObject.series[c]["stationIndex"]) {
+								seriesIndex = c;
+							}
+						}
+					}
+
+					if (seriesIndex !== -1) {
+						this.chartObject.series[seriesIndex].addPoint([
+							new Date(readings[r]["read_time"]).getTime(), y
+						], false, (this.chartObject.series[seriesIndex].data.length > maxReadings));
+					}
 				}
 			}
 		}

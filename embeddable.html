@@ -16,28 +16,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title>QUBS Climate Data Visualizer</title>
+    <title>QUBS Climate Data Visualizer</title>
 
-	<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,600,700,700i" rel="stylesheet">
-	<link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,600,700,700i" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style type="text/css">
+        div#container {
+            padding: 50px;
+        }
+        div#weather-overview {
+            font-size: 2.3rem;
+        }
+        #weather-overview #weather-last-update {
+            font-size: 1.2rem;
+        }
+    </style>
 
-	<script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
-	<script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
-	<script type="text/javascript" src="bower_components/highcharts/highstock.js"></script>
-	<!-- Include Highcharts' experimental boost module to increase performance. -->
-	<script type="text/javascript" src="bower_components/highcharts/modules/boost.js"></script>
-	<script type="text/javascript" src="bower_components/jquery-stupid-table/stupidtable.min.js"></script>
-	<script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="bower_components/highcharts/highcharts.js"></script>
+    <!-- Include Highcharts' experimental boost module to increase performance. -->
+    <script type="text/javascript" src="bower_components/highcharts/modules/boost.js"></script>
+    <script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
 
-	<script type="text/javascript" src="js/QCNChart.js"></script>
+    <script type="text/javascript" src="js/QCNChart.js"></script>
 
-	<script type="text/javascript">
+    <script type="text/javascript">
 		// BEGINNING OF CONFIGURATION
 		const API_URL = "http://data.qubs.ca/api/climate";
-		const DAYS_TO_LOAD = 31;
+		const DAYS_TO_LOAD = 7;
 		// END OF CONFIGURATION
 
 		const NA_STRING = '<span class="not-available">N/A</span>';
@@ -95,15 +105,13 @@
 		};
 
 		var tempOverviewChart;
-		var rhOverviewChart;
-		var apOverviewChart;
 
 		Highcharts.setOptions({
 			global : { useUTC : false }
 		});
 		Highcharts.theme = {
 			colors: ["#F44336", "#9C27B0", "#03A9F4", "#CDDC39", "#FF9800", "#607D8B",
-					"#009688", "#FFEB3B", "#3F51B5"],
+				"#009688", "#FFEB3B", "#3F51B5"],
 			chart: {
 				backgroundColor: "#FEFEFE"
 			},
@@ -121,36 +129,32 @@
 			},
 
 			xAxis: {
-				gridLineColor: "#EEEEEE",
+				gridLineColor: "#FEFEFE",
 				gridLineWidth: 1,
 
-				lineColor: "#E0E0E0",
-				tickColor: "#E0E0E0",
+				lineColor: "#FEFEFE",
+				tickColor: "#FEFEFE",
 
 				labels: {
-					style: { font: 'normal 0.7rem "Open Sans", sans-serif' }
+					style: { font: 'normal 1.3rem "Open Sans", sans-serif' }
 				}
 			},
 			yAxis: {
-				gridLineColor: "#EEEEEE",
+				gridLineColor: "#FEFEFE",
 				gridLineWidth: 1,
 				labels: {
-					style: { font: 'normal 0.7rem "Open Sans", sans-serif' }
+					style: { font: 'normal 1.3rem "Open Sans", sans-serif' }
 				}
 			},
 
 			legend: {
 				itemStyle: {
-					font: '9pt "Open Sans", sans-serif',
+					font: 'lighter 1rem "Open Sans", sans-serif',
 					color: "#424242"
 				},
 				itemHoverStyle:{
 					color: "#757575"
 				}
-			},
-
-			scrollbar: {
-				barBackgroundColor: "#CFD8DC"
 			}
 		};
 
@@ -158,7 +162,8 @@
 		Highcharts.setOptions(Highcharts.theme);
 
 		$(window).resize(function () {
-			$("#temp-overview-container").css("height", ($(window).height() - 16 - 90).toString() + "px");
+			$("#temp-overview-container").css("height", ($(window).height() - 16 - 90 - 100 - 87).toString() + "px");
+			$("#temp-overview-container").css("width", ($(window).width() - 74 * 2).toString() + "px");
 		});
 
 		var updateWeather = function (first) {
@@ -219,11 +224,6 @@
 				}
 			};
 
-			if (first) {
-				// Clear contents of table.
-				$("#weather-table").find("tbody").html("");
-			}
-
 			for (var s in dataStore.stations) {
 				if (dataStore.stations.hasOwnProperty(s)) {
 					const st = dataStore.stations[s];
@@ -264,68 +264,27 @@
 							}
 						}
 					}
-
-					var wind_speed = readings["wind_speed"].value;
-					if (st["name"] === "Queen's Point") {
-						// Queen's Point has more of a breakdown of wind speeds.
-						wind_speed = readings["mean_wind_speed"].value;
-					}
-
-					var wind_dir = readings["wind_dir"].value;
-					if (st["name"] === "Queen's Point") {
-						// Queen's Point has a different sensor type for wind direction.
-						wind_dir = readings["mean_wind_direction"].value;
-					}
-
-					if (first) {
-						$("#weather-table").find("tbody").append('<tr id="station-' + st["id"] + '">'
-							+ '<td class="station-name">' + st["name"] + '</td>'
-							+ '<td class="station-air-temp">' + readings["air_temp"].value + '</td>'
-							+ '<td class="station-rh">' + readings["rh"].value + '</td>'
-							+ '<td class="station-baro">' + readings["baro"].value + '</td>'
-							+ '<td class="station-wind-speed">' + wind_speed + '</td>'
-							+ '<td class="station-wind-dir">' + wind_dir + '</td></tr>');
-					} else {
-						// TODO: Devise a way to avoid "N/A" while data is updating.
-						var $stationRow = $("#station-" + st["id"]);
-						$stationRow.children(".station-air-temp").html(readings["air_temp"].value);
-						$stationRow.children(".station-rh").html(readings["rh"].value);
-						$stationRow.children(".station-baro").html(readings["baro"].value);
-						$stationRow.children(".station-wind-speed").html(wind_speed);
-						$stationRow.children(".station-wind-dir").html(wind_dir);
-					}
 				}
 			}
-
-			// Force Highcharts to properly draw height.
-			$(window).resize();
 
 			var lastUpdated = moment(dataStore.latestReadings[dataStore.latestReadings.length - 1]["created"]);
 			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm A");
 			$("#weather-last-update").html("Data updated " + lastUpdatedString + ".");
 
 			var temperatureAverage = allValues["air_temp"].reduce(function (total, number) {
-				return total + number;
-			}, 0) / allValues["air_temp"].length;
+					return total + number;
+				}, 0) / allValues["air_temp"].length;
 			$("#weather-temperature").html(Math.round(temperatureAverage).toString() + "&deg;C");
 
 			var humidityAverage = allValues["rh"].reduce(function (total, number) {
-				return total + number;
-			}, 0) / allValues["rh"].length;
+					return total + number;
+				}, 0) / allValues["rh"].length;
 			$("#weather-humidity").html(Math.round(humidityAverage).toString() + "%");
 		};
 
 		$(function () {
 			$(window).resize();
 
-			//noinspection JSUnusedGlobalSymbols
-			$("#tabs").tabs({
-				activate: function (event, ui) {
-					window.location.hash = ui.newTab.children("a").first().attr("href");
-				}
-			});
-
-			$("#weather-table").stupidtable();
 			$(".show-on-load").hide();
 			$(".graph-range-container").hide();
 
@@ -341,14 +300,6 @@
 					for (var s in sensors) {
 						if (sensors.hasOwnProperty(s)) {
 							dataStore.indexedSensors[sensors[s]["id"]] = sensors[s];
-						}
-					}
-				}),
-				$.get(API_URL + "/station-sensor-links/", function (links) {
-					dataStore.links = links;
-					for (var l in links) {
-						if (links.hasOwnProperty(l)) {
-							dataStore.linksByStation[links[l]["station"]] = links[l];
 						}
 					}
 				}),
@@ -395,7 +346,7 @@
 
 										if (DATA_TYPES[sensorType] !== undefined) {
 											if ((y < DATA_TYPES[sensorType]["bounds"][0]
-												 || y > DATA_TYPES[sensorType]["bounds"][1])
+												|| y > DATA_TYPES[sensorType]["bounds"][1])
 												|| dataStore.readings[r]["invalid"]) {
 												y = null;
 											}
@@ -463,46 +414,6 @@
 						stationSeries: stationSeries["air_temp"],
 						bounds: [-50, 60]
 					});
-
-					rhOverviewChart = new QCNChart({
-						daysToShow: 7,
-						daysToLoad: 31,
-
-						yAxisLabel: "Relative Humidity (%)",
-						valueSuffix: "%",
-
-						dataID: "rh",
-
-						container: "rh-overview-container",
-						centralDataStore: dataStore,
-
-						stationSeries: stationSeries["rh"],
-						bounds: [0, 100],
-
-						excludeStations: [6],
-
-						plotLinesY: [{
-							color: "#EEEEEE",
-							value: 100,
-							width: 2
-						}]
-					});
-
-					apOverviewChart = new QCNChart({
-						daysToShow: 7,
-						daysToLoad: 31,
-
-						yAxisLabel: "Air Pressure (hPa)",
-						valueSuffix: "hPa",
-
-						dataID: "ap",
-
-						container: "ap-overview-container",
-						centralDataStore: dataStore,
-
-						stationSeries: stationSeries["baro"],
-						bounds: [900, 1100]
-					});
 				}
 
 				$(".show-on-load").slideDown();
@@ -522,110 +433,18 @@
 					}
 				}.bind(this));
 			}.bind(this), 20000);
-
-			$("body").on("click", ".graph-time-range", function (event) {
-				const $target = $(event.target);
-
-				var daysToShow = 7;
-
-				switch ($target.data("time")) {
-					case "day":
-						daysToShow = 1;
-						break;
-					case "week":
-						daysToShow = 7;
-						break;
-					case "month":
-						daysToShow = 31;
-						break;
-				}
-
-				var startDay = new Date();
-				startDay.setDate(startDay.getDate() - daysToShow);
-
-				if ($target.parents("#tab-temperature").length !== 0) {
-					tempOverviewChart.setDaysToShow(daysToShow);
-				} else if ($target.parents("#tab-humidity").length !== 0) {
-					rhOverviewChart.setDaysToShow(daysToShow);
-				} else {
-					apOverviewChart.setDaysToShow(daysToShow);
-				}
-
-				$target.parent().find(".graph-time-range").each(function () { $(this).removeClass("selected"); });
-				$target.addClass("selected");
-			});
 		});
-	</script>
+    </script>
 </head>
 <body>
-	<div id="qubsBar">
-		<ul>
-			<li><a href="https://qubs.ca">QUBS</a></li>
-			<li><a href="https://elbowlakecentre.ca">ELEEC</a></li>
-			<li class="active"><a href="#">Climate Network</a></li>
-			<li><a href="https://dataverse.scholarsportal.info/dataverse/QUBS">QUBS Dataverse</a></li>
-			<li><a href="https://opinicon.wordpress.com/">Opinicon Natural History</a></li>
-			<li><a href="https://ecoadventurecamp.ca">Eco-Adventure Camp</a></li>
-			<li><a href="https://fowlerherbarium.ca">Fowler Herbarium</a></li>
-			<li><a href="http://fieldstations.ca">fieldstations.ca</a></li>
-		</ul>
-	</div>
-	<div id="tabs">
-		<ul>
-			<li><a href="#tab-overview">Overview</a></li>
-			<li><a href="#tab-temperature">Temperature</a></li>
-			<li><a href="#tab-humidity">Relative Humidity</a></li>
-			<li><a href="#tab-air-pressure">Air Pressure</a></li>
-		</ul>
-		<div id="tab-overview">
-			<div class="show-on-load">
-				<div id="weather-overview">
-					It is currently around <span id="weather-temperature">XX&deg;C</span> across QUBS properties, <br>
-					with a humidity level of about <span id="weather-humidity">YY%</span>.
-					<div id="weather-last-update">Last Updated</div>
-				</div>
-				<div id="weather-table-container">
-					<table id="weather-table">
-						<thead>
-							<tr>
-								<th data-sort="string-ins" class="sortable">Station</th>
-								<th>Air Temperature</th>
-								<th>Relative Humidity</th>
-								<th>Air Pressure</th>
-								<th>Wind Speed</th>
-								<th>Wind Direction</th>
-							</tr>
-						</thead>
-						<tbody></tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-		<div id="tab-temperature">
-			<ul class="graph-range-container">
-				<li class="graph-range graph-time-range" data-time="day">Day</li>
-				<li class="graph-range selected graph-time-range" data-time="week">Week</li>
-				<li class="graph-range graph-time-range" data-time="month">Month</li>
-			</ul>
-			<div id="temp-overview-container" class="graph-container"></div>
-		</div>
-		<div id="tab-humidity">
-			<ul class="graph-range-container">
-				<li class="graph-range graph-time-range" data-time="day">Day</li>
-				<li class="graph-range selected graph-time-range" data-time="week">Week</li>
-				<li class="graph-range graph-time-range" data-time="month">Month</li>
-			</ul>
-			<div id="rh-overview-container" class="graph-container"></div>
-		</div>
-		<div id="tab-air-pressure">
-			<ul class="graph-range-container">
-				<li class="graph-range graph-time-range" data-time="day">Day</li>
-				<li class="graph-range selected graph-time-range" data-time="week">Week</li>
-				<li class="graph-range graph-time-range" data-time="month">Month</li>
-			</ul>
-			<div id="ap-overview-container" class="graph-container"></div>
-		</div>
-		<div class="status-message">Loading...</div>
-	</div>
+<div id="container">
+    <div id="weather-overview" class="show-on-load">
+        It is currently around <span id="weather-temperature">XX&deg;C</span> across QUBS properties, <br>
+        with a humidity level of about <span id="weather-humidity">YY%</span>.
+        <div id="weather-last-update">Last Updated</div>
+        <div id="temp-overview-container" class="graph-container"></div>
+    </div>
+    <div class="status-message">Loading...</div>
+</div>
 </body>
 </html>
