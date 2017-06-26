@@ -246,7 +246,7 @@
 									readings[r].value = NA_STRING;
 								} else {
 									var value = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
-									if (value > readings[r].bounds[0] && value < readings[r].bounds[1]) {
+									if (value >= readings[r].bounds[0] && value <= readings[r].bounds[1]) {
 										allValues[r].push(value);
 									}
 
