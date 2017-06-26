@@ -15,6 +15,7 @@ var QCNChart = function (properties) {
 	this.stationSeries = properties.stationSeries || [];
 	this.bounds = properties.bounds || [-999999, 999999];
 
+	this.plotLinesX = properties.plotLinesX || [];
 	this.plotLinesY = properties.plotLinesY || [];
 
 	this.excludeStations = properties.excludeStations || [];
@@ -158,9 +159,22 @@ QCNChart.prototype.addReadings = function (readings) {
 						pushed at the same time. Shift if we have more than a
 						week's worth of data.
 					*/
-					this.chartObject.series[stationIndex].addPoint([
-						new Date(readings[r]["read_time"]).getTime(), y
-					], false, (this.chartObject.series[stationIndex].data.length > maxReadings));
+
+					var seriesIndex = -1;
+
+					for (var c in this.chartObject.series) {
+						if (this.chartObject.series.hasOwnProperty(c)) {
+							if (stationIndex === this.chartObject.series[c]["stationIndex"]) {
+								seriesIndex = c;
+							}
+						}
+					}
+
+					if (seriesIndex !== -1) {
+						this.chartObject.series[seriesIndex].addPoint([
+							new Date(readings[r]["read_time"]).getTime(), y
+						], false, (this.chartObject.series[seriesIndex].data.length > maxReadings));
+					}
 				}
 			}
 		}
