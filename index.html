@@ -93,6 +93,7 @@
 
 		var tempOverviewChart;
 		var rhOverviewChart;
+		var apOverviewChart;
 
 		Highcharts.setOptions({
 			global : { useUTC : false }
@@ -460,6 +461,22 @@
 							width: 2
 						}]
 					});
+
+					apOverviewChart = new QCNChart({
+						daysToShow: 7,
+						daysToLoad: 31,
+
+						yAxisLabel: "Air Pressure (hPa)",
+						valueSuffix: "hPa",
+
+						dataID: "ap",
+
+						container: "ap-overview-container",
+						centralDataStore: dataStore,
+
+						stationSeries: stationSeries["baro"],
+						bounds: [900, 1100]
+					});
 				}
 
 				$(".show-on-load").slideDown();
@@ -502,8 +519,10 @@
 
 				if ($target.parents("#tab-temperature").length !== 0) {
 					tempOverviewChart.setDaysToShow(daysToShow);
-				} else {
+				} else if ($target.parents("#tab-humidity").length !== 0) {
 					rhOverviewChart.setDaysToShow(daysToShow);
+				} else {
+					apOverviewChart.setDaysToShow(daysToShow);
 				}
 
 				$target.parent().find(".graph-time-range").each(function () { $(this).removeClass("selected"); });
@@ -530,11 +549,12 @@
 			<li><a href="#tab-overview">Overview</a></li>
 			<li><a href="#tab-temperature">Temperature</a></li>
 			<li><a href="#tab-humidity">Relative Humidity</a></li>
+			<li><a href="#tab-air-pressure">Air Pressure</a></li>
 		</ul>
 		<div id="tab-overview">
 			<div class="show-on-load">
 				<div id="weather-overview">
-					It is currently around <span id="weather-temperature">XX&deg;C</span> on QUBS properties, <br>
+					It is currently around <span id="weather-temperature">XX&deg;C</span> across QUBS properties, <br>
 					with a humidity level of about <span id="weather-humidity">YY%</span>.
 					<div id="weather-last-update">Last Updated</div>
 				</div>
@@ -570,6 +590,14 @@
 				<li class="graph-range graph-time-range" data-time="month">Month</li>
 			</ul>
 			<div id="rh-overview-container" class="graph-container"></div>
+		</div>
+		<div id="tab-air-pressure">
+			<ul class="graph-range-container">
+				<li class="graph-range graph-time-range" data-time="day">Day</li>
+				<li class="graph-range selected graph-time-range" data-time="week">Week</li>
+				<li class="graph-range graph-time-range" data-time="month">Month</li>
+			</ul>
+			<div id="ap-overview-container" class="graph-container"></div>
 		</div>
 		<div class="status-message">Loading...</div>
 	</div>
