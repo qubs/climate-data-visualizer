@@ -87,6 +87,9 @@
 			sensors: [],
 			indexedSensors: [],
 
+			links: [],
+			linksByStation: {},
+
 			readings: [],
 			latestReadings: []
 		};
@@ -315,6 +318,7 @@
 		$(function () {
 			$(window).resize();
 
+			//noinspection JSUnusedGlobalSymbols
 			$("#tabs").tabs({
 				activate: function (event, ui) {
 					window.location.hash = ui.newTab.children("a").first().attr("href");
@@ -337,6 +341,14 @@
 					for (var s in sensors) {
 						if (sensors.hasOwnProperty(s)) {
 							dataStore.indexedSensors[sensors[s]["id"]] = sensors[s];
+						}
+					}
+				}),
+				$.get(API_URL + "/station-sensor-links/", function (links) {
+					dataStore.links = links;
+					for (var l in links) {
+						if (links.hasOwnProperty(l)) {
+							dataStore.linksByStation[links[l]["station"]] = links[l];
 						}
 					}
 				}),
