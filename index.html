@@ -43,6 +43,41 @@
 		const NA_STRING = '<span class="not-available">N/A</span>';
 		var DAYS_TO_SHOW = 7;
 
+		const DATA_TYPES = {
+			"air_temp": {
+				bounds: [-50, 60],
+				decimals: 2
+			},
+			"rh": {
+				bounds: [0, 100],
+				decimals: 2
+			},
+			"baro": {
+				bounds: [300, 1200],
+				decimals: 2
+			},
+			"wind_speed": {
+				bounds: [0, 90],
+				decimals: 2
+			},
+			"mean_wind_speed": {
+				bounds: [0, 90],
+				decimals: 2
+			},
+			"wind_gust": {
+				bounds: [0, 90],
+				decimals: 2
+			},
+			"wind_dir": {
+				bounds: [0, 359.9],
+				decimals: 2
+			},
+			"mean_wind_direction": {
+				bounds: [0, 359.9],
+				decimals: 2
+			}
+		};
+
 		var dataStore = {
 			readTimeOfLastGraphUpdate: null,
 
@@ -310,8 +345,7 @@
 					dataStore.latestReadings = readings;
 				})
 			).then(function () {
-				var stationSeries = [];
-				var stationSeriesRH = [];
+				var stationSeries = {};
 
 				for (var s in dataStore.stations) {
 					if (dataStore.stations.hasOwnProperty(s)) {
@@ -321,8 +355,14 @@
 
 						const currentStation = dataStore.indexedStations[dataStore.stations[s]["id"]];
 
-						var initialData = [];
-						var initialDataRH = [];
+						var initialData = {};
+
+						for (var d in dataStore.stations[s]["sensors"]) {
+							if (dataStore.stations[s]["sensors"].hasOwnProperty(d)) {
+								initialData[dataStore.indexedSensors[dataStore.stations[s]["sensors"][d]]["data_id"]]
+									= [];
+							}
+						}
 
 						for (var r in dataStore.readings) {
 							if (dataStore.readings.hasOwnProperty(r)) {
@@ -393,7 +433,7 @@
 						container: "temp-overview-container",
 						centralDataStore: dataStore,
 
-						stationSeries: stationSeries2["air_temp"],
+						stationSeries: stationSeries["air_temp"],
 						bounds: [-50, 60]
 					});
 
@@ -409,7 +449,7 @@
 						container: "rh-overview-container",
 						centralDataStore: dataStore,
 
-						stationSeries: stationSeriesRH,
+						stationSeries: stationSeries["rh"],
 						bounds: [0, 100],
 
 						excludeStations: [6],
