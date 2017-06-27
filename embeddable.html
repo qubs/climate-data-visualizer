@@ -142,8 +142,12 @@
 			yAxis: {
 				gridLineColor: "#FEFEFE",
 				gridLineWidth: 1,
+                title: {
+					style: { font: 'normal 1.1rem "Open Sans", sans-serif' }
+                },
 				labels: {
-					style: { font: 'normal 1.3rem "Open Sans", sans-serif' }
+					style: { font: 'normal 1.3rem "Open Sans", sans-serif' },
+					format: "{value}°C"
 				}
 			},
 
@@ -380,6 +384,7 @@
 
 								stationSeries[i].push({
 									name: dataStore.stations[s].name,
+                                    type: "spline",
 									data: initialData[i],
 									stationIndex: s
 								});
