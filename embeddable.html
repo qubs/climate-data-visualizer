@@ -343,7 +343,8 @@
 								if (dataStore.readings[r]["station"] === currentStation["id"]) {
 									currentStation["chart_readings"].push(dataStore.readings[r]);
 
-									const sensorType = dataStore.indexedSensors[dataStore.readings[r]["sensor"]]["data_id"];
+									const sensorType
+                                        = dataStore.indexedSensors[dataStore.readings[r]["sensor"]]["data_id"];
 
 									var y = dataStore.readings[r]["value"];
 									if (y !== null) {
@@ -399,7 +400,8 @@
 				startDay.setDate(startDay.getDate() - DAYS_TO_SHOW);
 
 				if (dataStore.readings.length > 0) {
-					dataStore.readTimeOfLastGraphUpdate = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
+					dataStore.readTimeOfLastGraphUpdate
+                        = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
 
 					tempOverviewChart = new QCNChart({
 						daysToShow: 7,
