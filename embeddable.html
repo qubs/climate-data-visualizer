@@ -246,7 +246,8 @@
 								// If nothing was found for that sensor on the station, create a nice N/A message.
 								readings[r].value = NA_STRING;
 							} else {
-								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25
+								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 20
+                                    || st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25
 									|| st["name"] === "Leroi Swamp" && readings[r].value["sensor"] === 1
 									|| st["name"] === "Leroi Swamp" && readings[r].value["sensor"] === 2) {
 									// Various faulty sensors.
@@ -362,16 +363,12 @@
 
 						if (currentStation["id"] === 3) {
 							// Leroi Swamp RH sensor is not functional.
-							initialData["air_temp"] = [];
-						}
-
-						if (currentStation["id"] === 3) {
-							// Leroi Swamp RH sensor is not functional.
 							initialData["rh"] = [];
 						}
 
 						if (currentStation["id"] === 6) {
-							// Queen's Point RH sensor is not functional.
+							// Queen's Point Rotronic sensor is not functional.
+							initialData["air_temp"] = [];
 							initialData["rh"] = [];
 						}
 
