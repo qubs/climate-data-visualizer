@@ -45,42 +45,6 @@
 		const NA_STRING = '<span class="not-available">N/A</span>';
 		var DAYS_TO_SHOW = 7;
 
-		// TODO: Replace this with values pulled from an API query to station-sensor links
-		const DATA_TYPES = {
-			"air_temp": {
-				bounds: [-50, 60],
-				decimals: 2
-			},
-			"rh": {
-				bounds: [-2, 102],
-				decimals: 2
-			},
-			"baro": {
-				bounds: [800, 1200],
-				decimals: 2
-			},
-			"wind_speed": {
-				bounds: [-1, 90],
-				decimals: 2
-			},
-			"mean_wind_speed": {
-				bounds: [-1, 90],
-				decimals: 2
-			},
-			"wind_gust": {
-				bounds: [-1, 90],
-				decimals: 2
-			},
-			"wind_dir": {
-				bounds: [0, 360],
-				decimals: 2
-			},
-			"mean_wind_direction": {
-				bounds: [0, 360],
-				decimals: 2
-			}
-		};
-
 		const DISABLED_SENSORS = {
 			1: [],						// Elbow Lake
 			2: [],						// Hill Island
@@ -154,6 +118,25 @@
 			$("#temp-overview-container").css("height", ($(window).height() - 16 - 91).toString() + "px");
 		});
 
+		const inBounds = function (value, bounds) {
+			var lowerMet = false;
+			var upperMet = false;
+
+			if (bounds["lower_inc"]) {
+				lowerMet = (value >= bounds["lower"]);
+			} else {
+				lowerMet = (value > bounds["lower"]);
+			}
+
+			if (bounds["upper_inc"]) {
+				upperMet = (value <= bounds["upper"]);
+			} else {
+				upperMet = (value < bounds["upper"]);
+			}
+
+			return lowerMet && upperMet;
+		};
+
 		$(function () {
 			$(window).resize();
 
@@ -178,6 +161,9 @@
 
 					links: [],
 					linksByStation: {},
+
+					dataTypes: [],
+					dataTypesByShortName: {},
 
 					readings: [],
 					latestReadings: [],
@@ -209,25 +195,6 @@
 						this.readTimeOfLastGraphUpdate = readTime;
 					},
 
-					inBounds: function (value, bounds) {
-						var lowerMet = false;
-						var upperMet = false;
-
-						if (bounds["lower_inc"]) {
-							lowerMet = (value >= bounds["lower"]);
-						} else {
-							lowerMet = (value > bounds["lower"]);
-						}
-
-						if (bounds["upper_inc"]) {
-							upperMet = (value <= bounds["upper"]);
-						} else {
-							upperMet = (value < bounds["upper"]);
-						}
-
-						return lowerMet && upperMet;
-					},
-
 					fetchData: function () {
 						var startTime = new Date();
 						startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
@@ -256,6 +223,14 @@
 								for (var l in links) {
 									if (links.hasOwnProperty(l)) {
 										this.linksByStation[links[l]['station']['id']] = links[l];
+									}
+								}
+							}.bind(this)),
+							$.get(API_URL + '/data-types/', function (dataTypes) {
+								this.dataTypes = dataTypes;
+								for (var d in dataTypes) {
+									if (dataTypes.hasOwnProperty(d)) {
+										this.dataTypesByShortName[dataTypes[d]['short_name']] = dataTypes[d];
 									}
 								}
 							}.bind(this)),
@@ -296,23 +271,23 @@
 											if (this.readings[r]['station'] === currentStation['id']) {
 												currentStation['chart_readings'].push(this.readings[r]);
 
-												const sensorType
+												const dataTypeShortName
 													= this.sensorsByID[this.readings[r]['sensor']]['data_id'];
+
+												const readingDataType = this.dataTypesByShortName[dataTypeShortName];
 
 												var y = this.readings[r]['value'];
 												if (y !== null) {
 													y /= 100.0; // TODO: Use proper decimal settings...
 
-													if (DATA_TYPES[sensorType] !== undefined) {
-														if ((y < DATA_TYPES[sensorType]['bounds'][0]
-															|| y > DATA_TYPES[sensorType]['bounds'][1])
-															|| this.readings[r]['invalid']) {
+													if (typeof readingDataType !== 'undefined') {
+														if (!inBounds(y, readingDataType['bounds'])) {
 															y = null;
 														}
 													}
 												}
 
-												initialData[sensorType].push([
+												initialData[readingDataType].push([
 													new Date(this.readings[r]['read_time']).getTime(), y
 												]);
 											}
