@@ -451,7 +451,7 @@
 										const rc = r;
 
 										readings[r]['value'] = ($.grep(latestReadings, function (e) {
-											return this.sensorsByID[e["sensor"]]["data_id"] === rc;
+											return this.sensorsByID[e['sensor']]['data_id'] === rc;
 										}.bind(this)))[0];
 
 										if (readings[r]['value'] === undefined || readings[r]['value'] === null) {
@@ -481,13 +481,13 @@
 								}
 
 								var wind_speed = readings['wind_speed']['value'];
-								if (st["name"] === "Queen's Point") {
+								if (st['name'] === 'Queen\'s Point') {
 									// Queen's Point has more of a breakdown of wind speeds.
 									wind_speed = readings["mean_wind_speed"]['value'];
 								}
 
 								var wind_dir = readings['wind_dir']['value'];
-								if (st["name"] === "Queen's Point") {
+								if (st['name'] === 'Queen\'s Point') {
 									// Queen's Point has a different sensor type for wind direction.
 									wind_dir = readings["mean_wind_direction"]['value'];
 								}
