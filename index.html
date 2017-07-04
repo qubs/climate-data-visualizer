@@ -115,23 +115,23 @@
 		Highcharts.setOptions(Highcharts.theme);
 
 		$(window).resize(function () {
-			$("#temp-overview-container").css("height", ($(window).height() - 16 - 91).toString() + "px");
+			$('#temp-overview-container').css('height', ($(window).height() - 16 - 91).toString() + 'px');
 		});
 
 		const inBounds = function (value, bounds) {
 			var lowerMet = false;
 			var upperMet = false;
 
-			if (bounds["lower_inc"]) {
-				lowerMet = (value >= bounds["lower"]);
+			if (bounds['lower_inc']) {
+				lowerMet = (value >= bounds['lower']);
 			} else {
-				lowerMet = (value > bounds["lower"]);
+				lowerMet = (value > bounds['lower']);
 			}
 
-			if (bounds["upper_inc"]) {
-				upperMet = (value <= bounds["upper"]);
+			if (bounds['upper_inc']) {
+				upperMet = (value <= bounds['upper']);
 			} else {
-				upperMet = (value < bounds["upper"]);
+				upperMet = (value < bounds['upper']);
 			}
 
 			return lowerMet && upperMet;
@@ -335,7 +335,7 @@
 
 							setInterval(function () {
 								$.get(API_URL + '/settings/receiving_data/', function (receivingData) {
-									if (receivingData.value === "0") {
+									if (receivingData.value === '0') {
 										$.get(API_URL + '/readings/latest/', function (readings) {
 											this.latestReadings = readings;
 											this.updateWeather(false);
@@ -364,43 +364,43 @@
 						var readings = {
 							'air_temp': {
 								value: undefined,
-								suffix: "&deg;C",
+								suffix: '&deg;C',
 								bounds: [-50, 60],
 								decimals: 2
 							},
 							'rh': {
 								value: undefined,
-								suffix: "%",
+								suffix: '%',
 								bounds: [0, 101],
 								decimals: 2
 							},
 							'baro': {
 								value: undefined,
-								suffix: " hPa",
+								suffix: ' hPa',
 								bounds: [300, 1200],
 								decimals: 2
 							},
 							'wind_speed': {
 								value: undefined,
-								suffix: " m/s",
+								suffix: ' m/s',
 								bounds: [0, 90],
 								decimals: 2
 							},
 							'mean_wind_speed': {
 								value: undefined,
-								suffix: " m/s",
+								suffix: ' m/s',
 								bounds: [0, 90],
 								decimals: 2
 							},
 							'wind_dir': {
 								value: undefined,
-								suffix: "&deg;",
+								suffix: '&deg;',
 								bounds: [0, 359.9],
 								decimals: 2
 							},
 							'mean_wind_direction': {
 								value: undefined,
-								suffix: "&deg;",
+								suffix: '&deg;',
 								bounds: [0, 359.9],
 								decimals: 2
 							}
@@ -458,13 +458,13 @@
 								var wind_speed = readings['wind_speed']['value'];
 								if (st['name'] === 'Queen\'s Point') {
 									// Queen's Point has more of a breakdown of wind speeds.
-									wind_speed = readings["mean_wind_speed"]['value'];
+									wind_speed = readings['mean_wind_speed']['value'];
 								}
 
 								var wind_dir = readings['wind_dir']['value'];
 								if (st['name'] === 'Queen\'s Point') {
 									// Queen's Point has a different sensor type for wind direction.
-									wind_dir = readings["mean_wind_direction"]['value'];
+									wind_dir = readings['mean_wind_direction']['value'];
 								}
 
 								this.stations[s].latestReadings = {
@@ -480,7 +480,7 @@
 						// Force Highcharts to properly draw height.
 						$(window).resize();
 
-						const lastUpdated = moment(this.latestReadings[this.latestReadings.length - 1]["created"]);
+						const lastUpdated = moment(this.latestReadings[this.latestReadings.length - 1]['created']);
 						this.weatherLastUpdated = lastUpdated.format("MMMM Do [at] h:mm A");
 
 						this.currentTemperature = Math.round(allValues['air_temp'].reduce(function (total, number) {
