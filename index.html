@@ -295,9 +295,11 @@
 									}
 
 									for (var ds in DISABLED_SENSORS[currentStation['id']]) {
-										initialData[
-											this.sensorsByID
-												[DISABLED_SENSORS[currentStation['id']][ds]]['data_id']] = [];
+										if (DISABLED_SENSORS[currentStation['id']].hasOwnProperty(ds)) {
+											initialData[
+												this.sensorsByID
+													[DISABLED_SENSORS[currentStation['id']][ds]]['data_id']] = [];
+										}
 									}
 
 									for (var i in initialData) {
