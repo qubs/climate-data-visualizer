@@ -160,6 +160,7 @@
 					sensorsByID: {},
 
 					links: [],
+					linksByID: {},
 					linksByStation: {},
 
 					dataTypes: [],
@@ -222,6 +223,7 @@
 								this.links = links;
 								for (var l in links) {
 									if (links.hasOwnProperty(l)) {
+										this.linksByID[links[l]['id']] = links[l];
 										this.linksByStation[links[l]['station']['id']] = links[l];
 									}
 								}
