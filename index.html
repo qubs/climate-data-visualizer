@@ -222,7 +222,12 @@
 								for (var l in links) {
 									if (links.hasOwnProperty(l)) {
 										this.linksByID[links[l]['id']] = links[l];
-										this.linksByStation[links[l]['station']['id']] = links[l];
+
+										if (typeof this.linksByStation[links[l]['station']['id']] === 'undefined') {
+											this.linksByStation[links[l]['station']['id']] = [links[l]];
+										} else {
+											this.linksByStation[links[l]['station']['id']].push(links[l]);
+										}
 									}
 								}
 							}.bind(this)),
