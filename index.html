@@ -265,9 +265,10 @@
 
 									var initialData = {};
 
-									for (var d in currentStation['sensors']) {
-										if (currentStation['sensors'].hasOwnProperty(d)) {
-											initialData[this.sensorsByID[currentStation['sensors'][d]]['data_id']] = [];
+									for (var d in this.linksByStation[currentStation['id']]) {
+										if (this.linksByStation[currentStation['id']].hasOwnProperty(d)) {
+											initialData[this.linksByStation[currentStation['id']][d]['data_type']
+												['short_name']] = [];
 										}
 									}
 
