@@ -253,8 +253,6 @@
 						).then(function () {
 							var stationSeries = {};
 
-							console.log(this.linksByStation);
-
 							for (var s in this.stations) {
 								if (this.stations.hasOwnProperty(s)) {
 									// Reference the station's information from an object indexed with the station's
@@ -277,25 +275,30 @@
 											if (this.readings[r]['station'] === currentStation['id']) {
 												currentStation['chart_readings'].push(this.readings[r]);
 
-												const dataTypeShortName
-													= this.sensorsByID[this.readings[r]['sensor']]['data_id'];
+												if (this.readings[r]['station_sensor_link'] !== null) {
+													// The reading has been migrated properly with new fields.
 
-												const readingDataType = this.dataTypesByShortName[dataTypeShortName];
+													var readingStationSensorLink
+														= this.linksByID[this.readings[r]['station_sensor_link']];
 
-												var y = this.readings[r]['value'];
-												if (y !== null) {
-													y /= 100.0; // TODO: Use proper decimal settings...
+													const readingDataType = readingStationSensorLink['data_type'];
 
-													if (typeof readingDataType !== 'undefined') {
-														if (!inBounds(y, readingDataType['bounds'])) {
-															y = null;
+													var y = this.readings[r]['value'];
+													if (y !== null) {
+														y /= 100.0; // TODO: Use proper decimal settings...
+
+														if (typeof readingDataType !== 'undefined') {
+															if (!inBounds(y, readingDataType['bounds'])
+																|| this.readings[r]['invalid']) {
+																y = null;
+															}
 														}
 													}
-												}
 
-												initialData[readingDataType].push([
-													new Date(this.readings[r]['read_time']).getTime(), y
-												]);
+													initialData[readingDataType['short_name']].push([
+														new Date(this.readings[r]['read_time']).getTime(), y
+													]);
+												}
 											}
 										}
 									}
@@ -737,7 +740,7 @@
 
 									var y = readings[r]['value'];
 									if (y !== null)  {
-										y = y / 100.0;
+										y = y / 100.0; // TODO: Proper decimal calculations
 
 										if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]['invalid']) {
 											y = null;
@@ -862,8 +865,8 @@
 				<li v-bind:class="{ active: selectedTab == 'graph' && selectedDataType == 'baro' }">
 					<a v-on:click="showTab('graph'); changeSelectedDataType('baro');">Air Pressure</a>
 				</li>
-				<li v-bind:class="{ active: selectedTab == 'graph' && selectedDataType == 'wind_speed' }">
-					<a v-on:click="showTab('graph'); changeSelectedDataType('wind_speed');">Wind Speed</a>
+				<li v-bind:class="{ active: selectedTab == 'graph' && selectedDataType == 'mean_wind_speed' }">
+					<a v-on:click="showTab('graph'); changeSelectedDataType('mean_wind_speed');">Wind Speed</a>
 				</li>
 			</ul>
 		</nav>
