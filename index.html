@@ -285,7 +285,8 @@
 
 													var y = this.readings[r]['value'];
 													if (y !== null) {
-														y /= 100.0; // TODO: Use proper decimal settings...
+														y /= Math.pow(10,
+															this.sensorsByID[this.readings[r]['sensor']]['decimals']);
 
 														if (typeof readingDataType !== 'undefined') {
 															if (!inBounds(y, readingDataType['bounds'])
@@ -740,7 +741,7 @@
 
 									var y = readings[r]['value'];
 									if (y !== null)  {
-										y = y / 100.0; // TODO: Proper decimal calculations
+										y /= Math.pow(10, this.sensorsByID[readings[r]['sensor']]['decimals']);
 
 										if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]['invalid']) {
 											y = null;
