@@ -41,10 +41,10 @@
 
 		const NA_STRING = '<span class="not-available">N/A</span>';
 
-		const DISABLED_SENSORS = {
+		const DISABLED_DATA_TYPES = {
 			1: [],						// Elbow Lake
 			2: [],						// Hill Island
-			3: [2],						// Leroi Swamp
+			3: ['rh'],					// Leroi Swamp
 			4: [],						// Lindsay Lake
 			5: [],						// Long Lake
 			6: [],						// Queen's Point
@@ -308,11 +308,9 @@
 										}
 									}
 
-									for (var ds in DISABLED_SENSORS[currentStation['id']]) {
-										if (DISABLED_SENSORS[currentStation['id']].hasOwnProperty(ds)) {
-											initialData[
-												this.sensorsByID
-													[DISABLED_SENSORS[currentStation['id']][ds]]['data_id']] = [];
+									for (var dd in DISABLED_DATA_TYPES[currentStation['id']]) {
+										if (DISABLED_DATA_TYPES[currentStation['id']].hasOwnProperty(dd)) {
+											initialData[DISABLED_DATA_TYPES[currentStation['id']][dd]] = [];
 										}
 									}
 
@@ -435,10 +433,10 @@
 
 						for (var s in this.stations) {
 							if (this.stations.hasOwnProperty(s)) {
-								const st = this.stations[s];
+								const currentStation = this.stations[s];
 
 								const latestReadings = $.grep(this.latestReadings, function (e) {
-									return e['station'] === st['id'];
+									return e['station'] === currentStation['id'];
 								});
 
 								for (var r in readings) {
@@ -447,29 +445,34 @@
 
 										const rc = r;
 
-										readings[r]['value'] = ($.grep(latestReadings, function (e) {
-											return this.sensorsByID[e['sensor']]['data_id'] === rc;
+										const currentReading = ($.grep(latestReadings, function (e) {
+											return this.linksByID[e['station_sensor_link']]['data_type']['short_name']
+												=== rc;
 										}.bind(this)))[0];
 
-										if (readings[r]['value'] === undefined || readings[r]['value'] === null) {
-											// If nothing was found for that sensor on the station, create a nice
-											// N/A message.
-											readings[r]['value'] = NA_STRING;
-										} else {
-											if (DISABLED_SENSORS[st['id']].indexOf(readings[r]['value']['sensor'])
-													!== -1) {
-												// Various faulty sensors.
-												readings[r]['value'] = NA_STRING;
-											} else {
-												var value = readings[r]['value']['value']
-													/ Math.pow(10.0, readings[r].decimals);
-												if (value >= readings[r].bounds[0] && value <= readings[r].bounds[1]) {
+										// By default, leave a nice N/A message.
+										readings[r]['value'] = NA_STRING;
+
+										if (typeof currentReading !== 'undefined' && currentReading !== null) {
+											// A reading was found matching the correct data type.
+											const readingStationSensorLink
+												= this.linksByID[currentReading['station_sensor_link']];
+
+											if (DISABLED_DATA_TYPES[currentStation['id']]
+													.indexOf(readingStationSensorLink['data_type']['short_name'])
+													=== -1) {
+												var value = currentReading['value']
+													/ Math.pow(10.0, readingStationSensorLink['sensor']['decimals']);
+												if (inBounds(value,
+														this.linksByID[currentReading['station_sensor_link']]
+															['data_type']['bounds'])) {
 													allValues[r].push(value);
 												}
 
 												// Round off to 1 decimal place and set the value string with the
 												// suffix.
-												const rp = Math.pow(10.0, (readings[r].decimals - 1));
+												const rp = Math.pow(10.0,
+													readingStationSensorLink['sensor']['decimals'] - 1);
 												readings[r]['value'] = (Math.round(value * rp) / rp).toString()
 													+ readings[r]['suffix'];
 											}
