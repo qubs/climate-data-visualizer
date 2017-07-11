@@ -510,7 +510,13 @@
 
 			Vue.component('overview-tab', {
 				template: '#overview-tab-template',
-				props: ['currentTemperature', 'currentHumidity', 'weatherLastUpdated', 'stations']
+				props: ['currentTemperature', 'currentHumidity', 'weatherLastUpdated', 'stations'],
+				data: function () {
+					return {
+						// Include constants
+						NA_STRING: NA_STRING
+					}
+				}
 			});
 
 			Vue.component('graph-tab', {
