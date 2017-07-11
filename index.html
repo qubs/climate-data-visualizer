@@ -721,7 +721,7 @@
 					},
 
 					addReadings: function (readings) {
-						const maxReadings = 4 * 24 * this.daysToLoad;
+						const maxReadings = 24 * this.daysToLoad;  // Right now using 1 sample point every hour
 
 						for (var r in readings) {
 							if (readings.hasOwnProperty(r)) {
