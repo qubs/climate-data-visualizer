@@ -238,7 +238,10 @@
 									}
 								}
 							}.bind(this)),
-							$.get(API_URL + '/readings/', {
+							$.get({
+								url: API_URL + '/readings/',
+								cache: false
+							}, {
 								start: startTime.toISOString(),
 								sensors: [1, 2, 4, 6, 20, 23, 25],
 								interval: 4,
@@ -246,7 +249,10 @@
 							}, function (readings) {
 								this.readings = readings;
 							}.bind(this)),
-							$.get(API_URL + '/readings/latest/', function (readings) {
+							$.get({
+								url: API_URL + '/readings/latest/',
+								cache: false
+							}, function (readings) {
 								this.latestReadings = readings;
 							}.bind(this))
 						).then(function () {
@@ -345,9 +351,15 @@
 							this.loaded = true;
 
 							setInterval(function () {
-								$.get(API_URL + '/settings/receiving_data/', function (receivingData) {
+								$.get({
+									url: API_URL + '/settings/receiving_data/',
+									cache: false
+								}, function (receivingData) {
 									if (receivingData.value === '0') {
-										$.get(API_URL + '/readings/latest/', function (readings) {
+										$.get({
+											url: API_URL + '/readings/latest/',
+											cache: false
+										}, function (readings) {
 											this.latestReadings = readings;
 											this.updateWeather(false);
 										}.bind(this));
