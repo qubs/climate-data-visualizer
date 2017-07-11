@@ -159,9 +159,6 @@
 					linksByID: {},
 					linksByStation: {},
 
-					dataTypes: [],
-					dataTypesByShortName: {},
-
 					readings: [],
 					latestReadings: [],
 
@@ -226,14 +223,6 @@
 										} else {
 											this.linksByStation[links[l]['station']['id']].push(links[l]);
 										}
-									}
-								}
-							}.bind(this)),
-							$.get(API_URL + '/data-types/', function (dataTypes) {
-								this.dataTypes = dataTypes;
-								for (var d in dataTypes) {
-									if (dataTypes.hasOwnProperty(d)) {
-										this.dataTypesByShortName[dataTypes[d]['short_name']] = dataTypes[d];
 									}
 								}
 							}.bind(this)),
