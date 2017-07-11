@@ -587,21 +587,6 @@
 							default:
 								return '';
 						}
-					},
-
-					bounds: function () {
-						switch (this.selectedDataType) {
-							case 'air_temp':
-								return [-50, 60];
-							case 'rh':
-								return [0, 101];
-							case 'baro':
-								return [900, 1100];
-							case 'wind_speed':
-								return [0, 90];
-							default:
-								return [-Infinity, Infinity];
-						}
 					}
 				},
 
@@ -739,8 +724,12 @@
 
 						for (var r in readings) {
 							if (readings.hasOwnProperty(r)) {
-								if (this.sensorsByID[readings[r]['sensor']]['data_id'] === this.selectedDataType) {
-									const station = this.stationsByID[readings[r]['station']];
+								const readingStationSensorLink
+									= this.linksByID[readings[r]['station_sensor_link']];
+
+								if (readingStationSensorLink['data_type']['short_name'] === this.selectedDataType) {
+									// Use deep query to save look-ups...
+									const station = readingStationSensorLink['station'];
 									var stationIndex = -1;
 									for (var s in this.stations) {
 										if (this.stations.hasOwnProperty(s)) {
@@ -754,9 +743,10 @@
 
 									var y = readings[r]['value'];
 									if (y !== null)  {
-										y /= Math.pow(10, this.sensorsByID[readings[r]['sensor']]['decimals']);
+										y /= Math.pow(10, readingStationSensorLink['sensor']['decimals']);
 
-										if ((y < this.bounds[0] || y > this.bounds[1]) || readings[r]['invalid']) {
+										if (!inBounds(y, readingStationSensorLink['data_type']['bounds'])
+											|| readings[r]['invalid']) {
 											y = null;
 										}
 									}
