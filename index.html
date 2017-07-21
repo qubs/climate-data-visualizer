@@ -257,11 +257,11 @@
 
 							for (var s in this.stations) {
 								if (this.stations.hasOwnProperty(s)) {
+									const currentStation = this.stations[s];
+
 									// Reference the station's information from an object indexed with the station's
 									// web ID.
-									this.stationsByID[this.stations[s]['id']]['chart_readings'] = [];
-
-									const currentStation = this.stations[s];
+									this.stationsByID[currentStation['id']]['chart_readings'] = [];
 
 									var initialData = {};
 
@@ -274,34 +274,29 @@
 
 									for (var r in this.readings) {
 										if (this.readings.hasOwnProperty(r)) {
-											if (this.readings[r]['station'] === currentStation['id']) {
+											const readingStationSensorLink
+												= this.linksByID[this.readings[r]['station_sensor_link']];
+
+											if (readingStationSensorLink['station']['id'] === currentStation['id']) {
 												currentStation['chart_readings'].push(this.readings[r]);
 
-												if (this.readings[r]['station_sensor_link'] !== null) {
-													// The reading has been migrated properly with new fields.
+												const readingDataType = readingStationSensorLink['data_type'];
 
-													var readingStationSensorLink
-														= this.linksByID[this.readings[r]['station_sensor_link']];
+												var y = this.readings[r]['value'];
+												if (y !== null) {
+													y /= Math.pow(10, readingStationSensorLink['sensor']['decimals']);
 
-													const readingDataType = readingStationSensorLink['data_type'];
-
-													var y = this.readings[r]['value'];
-													if (y !== null) {
-														y /= Math.pow(10,
-															this.sensorsByID[this.readings[r]['sensor']]['decimals']);
-
-														if (typeof readingDataType !== 'undefined') {
-															if (!inBounds(y, readingDataType['bounds'])
-																|| this.readings[r]['invalid']) {
-																y = null;
-															}
+													if (typeof readingDataType !== 'undefined') {
+														if (!inBounds(y, readingDataType['bounds'])
+															|| this.readings[r]['invalid']) {
+															y = null;
 														}
 													}
-
-													initialData[readingDataType['short_name']].push([
-														new Date(this.readings[r]['read_time']).getTime(), y
-													]);
 												}
+
+												initialData[readingDataType['short_name']].push([
+													new Date(this.readings[r]['read_time']).getTime(), y
+												]);
 											}
 										}
 									}
