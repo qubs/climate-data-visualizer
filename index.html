@@ -810,7 +810,14 @@
 						<td><span v-html="station['latestReadings']['rh']"></span></td>
 						<td><span v-html="station['latestReadings']['baro']"></span></td>
 						<td><span v-html="station['latestReadings']['wind_speed']"></span></td>
-						<td><span v-html="station['latestReadings']['wind_dir']"></span></td>
+						<td>
+							<span v-html="station['latestReadings']['wind_dir']"></span>
+							<div class="wind-direction-indicator"
+								 v-if="station['latestReadings']['wind_dir'] !== NA_STRING"
+								 v-bind:style="{transform:'rotate('+station['latestReadings']['wind_dir'].slice(0,-5)+'deg)'}">
+								&uarr;
+							</div>
+						</td>
 					</tr>
 					</tbody>
 				</table>
