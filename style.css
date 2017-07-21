@@ -57,7 +57,10 @@ nav#tab-navigation ul li {
 	box-sizing: border-box;
 	margin-right: 1.5rem;
 
+	line-height: 60px;
+	font-family: "Open Sans", sans-serif;
 	font-size: 1rem;
+	color: #9E9E9E;
 
 	cursor: pointer;
 }

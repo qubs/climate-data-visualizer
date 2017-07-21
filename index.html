@@ -140,7 +140,8 @@
 				el: '#app',
 
 				data: {
-					loaded: false,
+					loadedWeather: false,
+					loadedReadings: false,
 					statusMessage: 'Loading...',
 
 					selectedTab: 'overview',
@@ -193,6 +194,18 @@
 						var startTime = new Date();
 						startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
 
+						const loadReadings = $.get({
+							url: API_URL + '/readings/',
+							cache: false
+						}, {
+							start: startTime.toISOString(),
+							sensors: [1, 2, 4, 6, 20, 23, 25],
+							interval: 4,
+							compact: true
+						}, function (readings) {
+							this.readings = readings;
+						}.bind(this));
+
 						$.when(
 							$.get(API_URL + '/stations/', function (stations) {
 								this.stations = stations;
@@ -227,23 +240,19 @@
 								}
 							}.bind(this)),
 							$.get({
-								url: API_URL + '/readings/',
-								cache: false
-							}, {
-								start: startTime.toISOString(),
-								sensors: [1, 2, 4, 6, 20, 23, 25],
-								interval: 4,
-								compact: true
-							}, function (readings) {
-								this.readings = readings;
-							}.bind(this)),
-							$.get({
 								url: API_URL + '/readings/latest/',
 								cache: false
 							}, function (readings) {
 								this.latestReadings = readings;
 							}.bind(this))
 						).then(function () {
+							this.updateWeather(true);
+							$("#weather-table").stupidtable();
+
+							this.loadedWeather = true;
+
+							return $.when(loadReadings);
+						}.bind(this)).then(function () {
 							var stationSeries = {};
 
 							for (var s in this.stations) {
@@ -321,20 +330,13 @@
 
 							this.stationSeries = stationSeries;
 
-							this.updateWeather(true);
-
-							var startDay = new Date();
-							startDay.setDate(startDay.getDate() - DAYS_TO_SHOW);
-
 							if (this.readings.length > 0) {
 								this.changeReadTimeOfLastGraphUpdate(
 									new Date(this.readings[this.readings.length - 1]['read_time'])
 								);
 							}
 
-							$("#weather-table").stupidtable();
-
-							this.loaded = true;
+							this.loadedReadings = true;
 
 							setInterval(function () {
 								$.get({
@@ -855,7 +857,7 @@
 	<div id="app">
 		<nav id="tab-navigation">
 			<h1>QUBS Climate Data Visualizer</h1>
-			<ul>
+			<ul v-if="loadedReadings">
 				<li v-bind:class="{ active: selectedTab == 'overview' }">
 					<a v-on:click="showTab('overview')">Overview</a>
 				</li>
@@ -872,8 +874,9 @@
 					<a v-on:click="showTab('graph'); changeSelectedDataType('mean_wind_speed');">Wind Speed</a>
 				</li>
 			</ul>
+			<ul v-if="loadedWeather && !loadedReadings"><li>{{ statusMessage }}</li></ul>
 		</nav>
-		<div id="tab-containers" v-if="loaded">
+		<div id="tab-containers" v-if="loadedWeather">
 			<overview-tab v-if="selectedTab == 'overview'"
 						  v-bind:current-temperature="currentTemperature"
 						  v-bind:current-humidity="currentHumidity"
@@ -889,7 +892,7 @@
 					   v-on:change-selected-data-type="changeSelectedDataType"
 					   v-on:change-read-time-of-last-graph-update="changeReadTimeOfLastGraphUpdate"></graph-tab>
 		</div>
-		<div class="status-message" v-if="!loaded">{{ statusMessage }}</div>
+		<div class="status-message" v-if="!loadedWeather">{{ statusMessage }}</div>
 	</div>
 </body>
 </html>
