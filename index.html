@@ -358,35 +358,15 @@
 						};
 
 						// Initialize array used for table values.
-						var readings = {
-							'air_temp': {
-								value: undefined,
-								suffix: '&deg;C'
-							},
-							'rh': {
-								value: undefined,
-								suffix: '%'
-							},
-							'baro': {
-								value: undefined,
-								suffix: ' hPa'
-							},
-							'wind_speed': {
-								value: undefined,
-								suffix: ' m/s'
-							},
-							'mean_wind_speed': {
-								value: undefined,
-								suffix: ' m/s'
-							},
-							'wind_dir': {
-								value: undefined,
-								suffix: '&deg;'
-							},
-							'mean_wind_direction': {
-								value: undefined,
-								suffix: '&deg;'
-							}
+						// TODO: Don't use this anymore...
+						var weatherReadings = {
+							'air_temp': null,
+							'rh': null,
+							'baro': null,
+							'wind_speed': null,
+							'mean_wind_speed': null,
+							'wind_dir': null,
+							'mean_wind_direction': null
 						};
 
 						if (first) {
@@ -402,8 +382,8 @@
 									return e['station'] === currentStation['id'];
 								});
 
-								for (var r in readings) {
-									if (readings.hasOwnProperty(r)) {
+								for (var r in weatherReadings) {
+									if (weatherReadings.hasOwnProperty(r)) {
 										// Set proper values for table display.
 
 										const rc = r;
@@ -414,7 +394,7 @@
 										}.bind(this)))[0];
 
 										// By default, leave a nice N/A message.
-										readings[r]['value'] = NA_STRING;
+										weatherReadings[r] = NA_STRING;
 
 										if (typeof currentReading !== 'undefined' && currentReading !== null) {
 											// A reading was found matching the correct data type.
@@ -436,26 +416,39 @@
 												// suffix.
 												const rp = Math.pow(10.0,
 													readingStationSensorLink['sensor']['decimals'] - 1);
-												readings[r]['value'] = (Math.round(value * rp) / rp).toString()
-													+ readings[r]['suffix'];
+												weatherReadings[r] = (function (v) {
+													const roundedValue = (Math.round(v * rp) / rp).toString();
+
+													var unitSuffix = '';
+
+													if (readingStationSensorLink['data_type']['unit'] !== 'none') {
+														unitSuffix = readingStationSensorLink['data_type']['unit'];
+														if (/[a-zA-Z]/.test(unitSuffix.charAt(0))) {
+															// Format 'English' suffixes nicely.
+															unitSuffix = ' ' + unitSuffix;
+														}
+													}
+
+													return roundedValue + unitSuffix;
+												})(value);
 											}
 										}
 									}
 								}
 
-								var wind_speed = readings['wind_speed']['value'];
-								var wind_dir = readings['wind_dir']['value'];
+								var wind_speed = weatherReadings['mean_wind_speed'];
+								var wind_dir = weatherReadings['wind_dir'];
 								if (currentStation['name'] === 'Queen\'s Point') {
 									// Queen's Point has more of a breakdown of wind speeds.
-									wind_speed = readings['mean_wind_speed']['value'];
+									wind_speed = weatherReadings['mean_wind_speed'];
 									// Queen's Point has a different sensor type for wind direction.
-									wind_dir = readings['mean_wind_direction']['value'];
+									wind_dir = weatherReadings['mean_wind_direction'];
 								}
 
 								this.stations[s].latestReadings = {
-									'air_temp': readings['air_temp']['value'],
-									'rh': readings['rh']['value'],
-									'baro': readings['baro']['value'],
+									'air_temp': weatherReadings['air_temp'],
+									'rh': weatherReadings['rh'],
+									'baro': weatherReadings['baro'],
 									'wind_speed': wind_speed,
 									'wind_dir': wind_dir
 								};
