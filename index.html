@@ -494,7 +494,7 @@
 			Vue.component('graph-tab', {
 				template: '#graph-tab-template',
 				props: ['readTimeOfLastGraphUpdate', 'selectedDataType', 'stations', 'stationsByID', 'sensorsByID',
-					'stationSeries'],
+					'linksByID', 'stationSeries'],
 
 				data: function () {
 					return {
@@ -730,7 +730,8 @@
 
 										for (var c in this.chartObject.series) {
 											if (this.chartObject.series.hasOwnProperty(c)) {
-												if (stationIndex === this.chartObject.series[c]['stationIndex']) {
+												if (this.stations[stationIndex]['name']
+													=== this.chartObject.series[c]['name']) {
 													seriesIndex = c;
 												}
 											}
