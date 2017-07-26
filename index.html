@@ -40,6 +40,7 @@
 		// END OF CONFIGURATION
 
 		const NA_STRING = '<span class="not-available">N/A</span>';
+		const LOADING_MESSAGE = 'Loading...';
 
 		const DISABLED_DATA_TYPES = {
 			1: [],						// Elbow Lake
@@ -142,7 +143,7 @@
 				data: {
 					loadedWeather: false,
 					loadedReadings: false,
-					statusMessage: 'Loading...',
+					statusMessage: LOADING_MESSAGE,
 
 					selectedTab: 'overview',
 					selectedDataType: 'air_temp',
