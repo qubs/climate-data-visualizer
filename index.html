@@ -56,9 +56,9 @@
 			global : { useUTC : false }
 		});
 		Highcharts.theme = {
-			colors: ["#F44336", "#9C27B0", "#03A9F4", "#CDDC39", "#FF9800", "#607D8B", "#009688", "#FFEB3B", "#3F51B5"],
+			colors: ['#F44336', '#9C27B0', '#03A9F4', '#CDDC39', '#FF9800', '#607D8B', '#009688', '#FFEB3B', '#3F51B5'],
 			chart: {
-				backgroundColor: "#FEFEFE"
+				backgroundColor: '#FEFEFE'
 			},
 			title: {
 				style: {
@@ -77,8 +77,8 @@
 				gridLineColor: "#EEEEEE",
 				gridLineWidth: 1,
 
-				lineColor: "#E0E0E0",
-				tickColor: "#E0E0E0",
+				lineColor: '#E0E0E0',
+				tickColor: '#E0E0E0',
 
 				labels: {
 					style: { font: 'normal 0.7rem "Open Sans", sans-serif' }
@@ -95,15 +95,15 @@
 			legend: {
 				itemStyle: {
 					font: '9pt "Open Sans", sans-serif',
-					color: "#424242"
+					color: '#424242'
 				},
 				itemHoverStyle:{
-					color: "#757575"
+					color: '#757575'
 				}
 			},
 
 			scrollbar: {
-				barBackgroundColor: "#CFD8DC"
+				barBackgroundColor: '#CFD8DC'
 			}
 		};
 
@@ -239,7 +239,7 @@
 							}.bind(this))
 						).then(function () {
 							this.updateWeather(true);
-							$("#weather-table").stupidtable();
+							$('#weather-table').stupidtable();
 
 							this.loadedWeather = true;
 
@@ -391,7 +391,7 @@
 
 						if (first) {
 							// Clear contents of table.
-							$("#weather-table").find('tbody').html('');
+							$('#weather-table').find('tbody').html('');
 						}
 
 						for (var s in this.stations) {
@@ -466,7 +466,7 @@
 						$(window).resize();
 
 						const lastUpdated = moment(this.latestReadings[this.latestReadings.length - 1]['created']);
-						this.weatherLastUpdated = lastUpdated.format("MMMM Do [at] h:mm A");
+						this.weatherLastUpdated = lastUpdated.format('MMMM Do [at] h:mm A');
 
 						this.currentTemperature = Math.round(allValues['air_temp'].reduce(function (total, number) {
 							return total + number;
@@ -530,7 +530,7 @@
 								return [];
 							case 'rh':
 								return [{
-									color: "#EEEEEE",
+									color: '#EEEEEE',
 									value: 100,
 									width: 2
 								}];
@@ -598,11 +598,11 @@
 						dateRange.setDate(dateRange.getDate() - this.daysToShow);
 
 						this.chartOptions = {
-							title: {text: ""},
-							subtitle: {text: ""},
+							title: {text: ''},
+							subtitle: {text: ''},
 
 							xAxis: {
-								type: "datetime",
+								type: 'datetime',
 								tickPixelInterval: 150,
 								min: dateRange.getTime(),
 								max: (new Date()).getTime()
@@ -612,7 +612,7 @@
 								plotLines: [{
 									value: 0,
 									width: 1,
-									color: "#FF5722"
+									color: '#FF5722'
 								}]
 							},
 							tooltip: {valueSuffix: this.valueSuffix},
@@ -636,9 +636,9 @@
 										setInterval(function () {
 											if (!this.processing) {
 												this.processing = true;
-												$.get(API_URL + "/settings/receiving_data/", function (receivingData) {
-													if (receivingData.value === "0" && this.readTimeOfLastGraphUpdate) {
-														$.get(API_URL + "/readings/", {
+												$.get(API_URL + '/settings/receiving_data/', function (receivingData) {
+													if (receivingData.value === '0' && this.readTimeOfLastGraphUpdate) {
+														$.get(API_URL + '/readings/', {
 															start: moment(this.readTimeOfLastGraphUpdate).add(45, 'm')
 																.toISOString(),
 															start_exclusive: true,
