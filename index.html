@@ -307,8 +307,7 @@
 
 											stationSeries[i].push({
 												name: this.stations[s]['name'],
-												data: initialData[i],
-												stationIndex: s
+												data: initialData[i]
 											});
 										}
 									}
@@ -864,6 +863,7 @@
 					   v-bind:stations="stations"
 					   v-bind:stations-by-i-d="stationsByID"
 					   v-bind:sensors-by-i-d="sensorsByID"
+					   v-bind:links-by-i-d="linksByID"
 					   v-bind:station-series="stationSeries"
 					   v-bind:selected-data-type="selectedDataType"
 					   v-on:change-selected-data-type="changeSelectedDataType"
