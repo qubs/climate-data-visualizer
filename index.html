@@ -153,10 +153,8 @@
 					stations: [],
 					stationsByID: {},
 
-					sensors: [],
 					sensorsByID: {},
 
-					links: [],
 					linksByID: {},
 					linksByStation: {},
 
@@ -216,7 +214,6 @@
 								}
 							}.bind(this)),
 							$.get(API_URL + '/sensors/', function (sensors) {
-								this.sensors = sensors;
 								for (var s in sensors) {
 									if (sensors.hasOwnProperty(s)) {
 										this.sensorsByID[sensors[s]['id']] = sensors[s];
@@ -226,7 +223,6 @@
 							$.get(API_URL + '/station-sensor-links/', {
 								deep: true
 							}, function (links) {
-								this.links = links;
 								for (var l in links) {
 									if (links.hasOwnProperty(l)) {
 										this.linksByID[links[l]['id']] = links[l];
