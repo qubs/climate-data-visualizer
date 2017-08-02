@@ -91,6 +91,10 @@ div#tab-containers {
 	top: 91px; left: 0; right: 0; bottom: 0;
 	overflow-y: auto;
 }
+div#app.no-nav div#tab-containers {
+	top: 0;
+	padding: 40px;
+}
 
 .status-message {
 	position: fixed;
@@ -103,6 +107,9 @@ div#tab-containers {
 	line-height: 19px;
 	text-align: center;
 	color: #9E9E9E;
+}
+div#app.no-nav .status-message {
+	top: 50%;
 }
 
 #weather-overview {
