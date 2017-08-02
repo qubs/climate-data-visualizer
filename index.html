@@ -783,7 +783,7 @@
 							<span v-html="station['latestReadings']['wind_dir']"></span>
 							<div class="wind-direction-indicator"
 								 v-if="station['latestReadings']['wind_dir'] !== NA_STRING"
-								 v-bind:style="{transform:'rotate('+station['latestReadings']['wind_dir'].slice(0,-5)+'deg)'}">
+								 v-bind:style="{transform:'rotate('+station['latestReadings']['wind_dir'].slice(0,-1)+'deg)'}">
 								&uarr;
 							</div>
 						</td>
