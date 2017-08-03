@@ -345,6 +345,14 @@
 						}.bind(this));
 					},
 
+					addDataToStationSeries: function (dataType, stationIndex, dataPoint) {
+						if (this.stationSeries.hasOwnProperty(dataType)) {
+							this.stationSeries[dataType][stationIndex]['data'].push(dataPoint);
+						} else {
+							console.error('Not a valid station series data type: ' + dataType);
+						}
+					},
+
 					updateWeather: function (first) {
 						// Initialize arrays used for averaging.
 						var allValues = {
@@ -729,6 +737,9 @@
 											}
 										}
 
+										this.$emit('add-data-to-station-series', this.selectedDataType, seriesIndex,
+											[readings[r]['read_time'], y]);
+
 										if (seriesIndex !== -1) {
 											this.chartObject.series[seriesIndex].addPoint([
 												new Date(readings[r]['read_time']).getTime(), y
@@ -857,7 +868,8 @@
 					   v-bind:station-series="stationSeries"
 					   v-bind:selected-data-type="selectedDataType"
 					   v-on:change-selected-data-type="changeSelectedDataType"
-					   v-on:change-read-time-of-last-graph-update="changeReadTimeOfLastGraphUpdate"></graph-tab>
+					   v-on:change-read-time-of-last-graph-update="changeReadTimeOfLastGraphUpdate"
+					   v-on:add-data-to-station-series="addDataToStationSeries"></graph-tab>
 		</div>
 		<div class="status-message" v-if="!loadedWeather">{{ statusMessage }}</div>
 	</div>
