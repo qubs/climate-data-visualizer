@@ -64,10 +64,6 @@ nav#tab-navigation ul li {
 
 	cursor: pointer;
 }
-nav#tab-navigation ul li.active a {
-	color: #2196F3;
-	transition: color 0.15s;
-}
 nav#tab-navigation ul li a {
 	display: block;
 	height: 60px;
@@ -80,6 +76,10 @@ nav#tab-navigation ul li a {
 	text-transform: uppercase;
 	color: #9E9E9E;
 
+	transition: color 0.15s;
+}
+nav#tab-navigation ul li a.router-link-exact-active {
+	color: #2196F3;
 	transition: color 0.15s;
 }
 nav#tab-navigation ul li a:focus {

@@ -23,95 +23,38 @@
 
     <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,600,700,700i" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style type="text/css">
-        div#container {
-            padding: 50px;
-        }
-        div#weather-overview {
-            font-size: 2.3rem;
-        }
-        #weather-overview #weather-last-update {
-            font-size: 1.2rem;
-        }
-    </style>
 
+    <script type="text/javascript" src="bower_components/vue/dist/vue.js"></script>
     <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
-    <script type="text/javascript" src="bower_components/jquery-ui/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="bower_components/highcharts/highcharts.js"></script>
+    <script type="text/javascript" src="bower_components/highcharts/highstock.js"></script>
     <!-- Include Highcharts' experimental boost module to increase performance. -->
-    <script type="text/javascript" src="bower_components/highcharts/modules/boost.js"></script>
-    <script type="text/javascript" src="bower_components/moment/min/moment.min.js"></script>
-
-    <script type="text/javascript" src="js/QCNChart.js"></script>
+    <script type="text/javascript" defer src="bower_components/highcharts/modules/boost.js"></script>
+    <script type="text/javascript" async src="bower_components/moment/min/moment.min.js"></script>
 
     <script type="text/javascript">
 		// BEGINNING OF CONFIGURATION
-		const API_URL = "http://data.qubs.ca/api/climate";
+		const API_URL = 'https://data.qubs.ca/api/climate';
 		const DAYS_TO_LOAD = 7;
 		// END OF CONFIGURATION
 
 		const NA_STRING = '<span class="not-available">N/A</span>';
-		var DAYS_TO_SHOW = 7;
 
-		const DATA_TYPES = {
-			"air_temp": {
-				bounds: [-50, 60],
-				decimals: 2
-			},
-			"rh": {
-				bounds: [0, 100],
-				decimals: 2
-			},
-			"baro": {
-				bounds: [300, 1200],
-				decimals: 2
-			},
-			"wind_speed": {
-				bounds: [0, 90],
-				decimals: 2
-			},
-			"mean_wind_speed": {
-				bounds: [0, 90],
-				decimals: 2
-			},
-			"wind_gust": {
-				bounds: [0, 90],
-				decimals: 2
-			},
-			"wind_dir": {
-				bounds: [0, 359.9],
-				decimals: 2
-			},
-			"mean_wind_direction": {
-				bounds: [0, 359.9],
-				decimals: 2
-			}
+		const DISABLED_DATA_TYPES = {
+			1: [],						// Elbow Lake
+			2: [],						// Hill Island
+			3: [],  					// Leroi Swamp
+			4: [],						// Lindsay Lake
+			5: [],						// Long Lake
+			6: [],						// Queen's Point
+			7: [],						// Round Lake
+			8: []						// Warner Lake
 		};
-
-		var dataStore = {
-			readTimeOfLastGraphUpdate: null,
-
-			stations: [],
-			indexedStations: [],
-
-			sensors: [],
-			indexedSensors: [],
-
-			links: [],
-			linksByStation: {},
-
-			readings: [],
-			latestReadings: []
-		};
-
-		var tempOverviewChart;
 
 		Highcharts.setOptions({
 			global : { useUTC : false }
 		});
 		Highcharts.theme = {
-			colors: ["#F44336", "#9C27B0", "#03A9F4", "#CDDC39", "#FF9800", "#607D8B",
-				"#009688", "#FFEB3B", "#3F51B5"],
+			colors: ["#F44336", "#9C27B0", "#03A9F4", "#CDDC39", "#FF9800", "#607D8B", "#009688", "#FFEB3B", "#3F51B5"],
 			chart: {
 				backgroundColor: "#FEFEFE"
 			},
@@ -142,8 +85,12 @@
 			yAxis: {
 				gridLineColor: "#FEFEFE",
 				gridLineWidth: 1,
+				title: {
+					style: { font: 'normal 1.1rem "Open Sans", sans-serif' }
+				},
 				labels: {
-					style: { font: 'normal 1.3rem "Open Sans", sans-serif' }
+					style: { font: 'normal 1.3rem "Open Sans", sans-serif' },
+					format: "{value}°C"
 				}
 			},
 
@@ -162,289 +109,670 @@
 		Highcharts.setOptions(Highcharts.theme);
 
 		$(window).resize(function () {
-			$("#temp-overview-container").css("height", ($(window).height() - 16 - 90 - 100 - 87).toString() + "px");
-			$("#temp-overview-container").css("width", ($(window).width() - 74 * 2).toString() + "px");
+			$('#graph-container').css('height',
+                ($(window).height() - 48 - 80 - $('#weather-overview').height()).toString() + 'px');
 		});
 
-		var updateWeather = function (first) {
-			// Initialize arrays used for averaging.
-			var allValues = {
-				"air_temp": [],
-				"rh": [],
-				"baro": [],
-				"wind_speed": [],
-				"mean_wind_speed": [],
-				"wind_dir": [],
-				"mean_wind_direction": []
-			};
+		const inBounds = function (value, bounds) {
+			var lowerMet = false;
+			var upperMet = false;
 
-			// Initialize array used for table values.
-			var readings = {
-				"air_temp": {
-					value: undefined,
-					suffix: "&deg;C",
-					bounds: [-50, 60],
-					decimals: 2
-				},
-				"rh": {
-					value: undefined,
-					suffix: "%",
-					bounds: [0, 100],
-					decimals: 2
-				},
-				"baro": {
-					value: undefined,
-					suffix: " hPa",
-					bounds: [300, 1200],
-					decimals: 2
-				},
-				"wind_speed": {
-					value: undefined,
-					suffix: " m/s",
-					bounds: [0, 90],
-					decimals: 2
-				},
-				"mean_wind_speed": {
-					value: undefined,
-					suffix: " m/s",
-					bounds: [0, 90],
-					decimals: 2
-				},
-				"wind_dir": {
-					value: undefined,
-					suffix: "&deg;",
-					bounds: [0, 359.9],
-					decimals: 2
-				},
-				"mean_wind_direction": {
-					value: undefined,
-					suffix: "&deg;",
-					bounds: [0, 359.9],
-					decimals: 2
-				}
-			};
-
-			for (var s in dataStore.stations) {
-				if (dataStore.stations.hasOwnProperty(s)) {
-					const st = dataStore.stations[s];
-
-					const latestReadings = $.grep(dataStore.latestReadings, function (e) {
-						return e["station"] === st["id"];
-					});
-
-					for (var r in readings) {
-						if (readings.hasOwnProperty(r)) {
-							// Set proper values for table display.
-
-							const rc = r;
-
-							readings[r].value = ($.grep(latestReadings, function (e) {
-								return dataStore.indexedSensors[e["sensor"]]["data_id"] === rc;
-							}))[0];
-
-							if (readings[r].value === undefined || readings[r].value === null) {
-								// If nothing was found for that sensor on the station, create a nice N/A message.
-								readings[r].value = NA_STRING;
-							} else {
-								if (st["name"] === "Queen's Point" && readings[r].value["sensor"] === 25
-									|| st["name"] === "Leroi Swamp" && readings[r].value["sensor"] === 1
-									|| st["name"] === "Leroi Swamp" && readings[r].value["sensor"] === 2) {
-									// Various faulty sensors.
-									readings[r].value = NA_STRING;
-								} else {
-									var value = readings[r].value.value / Math.pow(10.0, readings[r].decimals);
-									if (value >= readings[r].bounds[0] && value <= readings[r].bounds[1]) {
-										allValues[r].push(value);
-									}
-
-									// Round off to 1 decimal place and set the value string with the suffix.
-									const rp = Math.pow(10.0, (readings[r].decimals - 1));
-									readings[r].value = (Math.round(value * rp) / rp).toString() + readings[r].suffix;
-								}
-							}
-						}
-					}
-				}
+			if (bounds['lower_inc']) {
+				lowerMet = (value >= bounds['lower']);
+			} else {
+				lowerMet = (value > bounds['lower']);
 			}
 
-			var lastUpdated = moment(dataStore.latestReadings[dataStore.latestReadings.length - 1]["created"]);
-			var lastUpdatedString = lastUpdated.format("MMMM Do [at] h:mm A");
-			$("#weather-last-update").html("Data updated " + lastUpdatedString + ".");
+			if (bounds['upper_inc']) {
+				upperMet = (value <= bounds['upper']);
+			} else {
+				upperMet = (value < bounds['upper']);
+			}
 
-			var temperatureAverage = allValues["air_temp"].reduce(function (total, number) {
-					return total + number;
-				}, 0) / allValues["air_temp"].length;
-			$("#weather-temperature").html(Math.round(temperatureAverage).toString() + "&deg;C");
-
-			var humidityAverage = allValues["rh"].reduce(function (total, number) {
-					return total + number;
-				}, 0) / allValues["rh"].length;
-			$("#weather-humidity").html(Math.round(humidityAverage).toString() + "%");
+			return lowerMet && upperMet;
 		};
 
 		$(function () {
 			$(window).resize();
 
-			$(".show-on-load").hide();
-			$(".graph-range-container").hide();
+			var app = new Vue({
+				el: '#app',
 
-			var startTime = new Date();
-			startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
+				data: {
+					loaded: false,
+					statusMessage: 'Loading...',
 
-			$.when(
-				$.get(API_URL + "/stations/", function (stations) {
-					dataStore.stations = stations;
-				}),
-				$.get(API_URL + "/sensors/", function (sensors) {
-					dataStore.sensors = sensors;
-					for (var s in sensors) {
-						if (sensors.hasOwnProperty(s)) {
-							dataStore.indexedSensors[sensors[s]["id"]] = sensors[s];
-						}
-					}
-				}),
-				$.get(API_URL + "/readings/", {
-					start: startTime.toISOString(),
-					sensors: [1, 2, 4, 20, 25],
-					interval: 4
-				}, function (readings) {
-					dataStore.readings = readings;
-				}),
-				$.get(API_URL + "/readings/latest/", function (readings) {
-					dataStore.latestReadings = readings;
-				})
-			).then(function () {
-				var stationSeries = {};
+					selectedTab: 'overview',
+					selectedDataType: 'air_temp',
 
-				for (var s in dataStore.stations) {
-					if (dataStore.stations.hasOwnProperty(s)) {
-						// Reference the station's information from an object indexed with the station's web ID.
-						dataStore.indexedStations[dataStore.stations[s]["id"]] = dataStore.stations[s];
-						dataStore.indexedStations[dataStore.stations[s]["id"]]["chart_readings"] = [];
+					currentTemperature: 0,
+					currentHumidity: 0,
 
-						const currentStation = dataStore.indexedStations[dataStore.stations[s]["id"]];
+					stations: [],
+					stationsByID: {},
 
-						var initialData = {};
+					sensorsByID: {},
 
-						for (var d in dataStore.stations[s]["sensors"]) {
-							if (dataStore.stations[s]["sensors"].hasOwnProperty(d)) {
-								initialData[dataStore.indexedSensors[dataStore.stations[s]["sensors"][d]]["data_id"]]
-									= [];
-							}
-						}
+					linksByID: {},
+					linksByStation: {},
 
-						for (var r in dataStore.readings) {
-							if (dataStore.readings.hasOwnProperty(r)) {
-								if (dataStore.readings[r]["station"] === currentStation["id"]) {
-									currentStation["chart_readings"].push(dataStore.readings[r]);
+					readings: [],
+					latestReadings: [],
 
-									const sensorType = dataStore.indexedSensors[dataStore.readings[r]["sensor"]]["data_id"];
+					stationSeries: {},
 
-									var y = dataStore.readings[r]["value"];
-									if (y !== null) {
-										y /= 100.0;
+					readTimeOfLastGraphUpdate: null,
+					weatherLastUpdated: ''
+				},
 
-										if (DATA_TYPES[sensorType] !== undefined) {
-											if ((y < DATA_TYPES[sensorType]["bounds"][0]
-												|| y > DATA_TYPES[sensorType]["bounds"][1])
-												|| dataStore.readings[r]["invalid"]) {
-												y = null;
+				created: function () {
+					this.fetchData();
+				},
+
+				methods: {
+					showTab: function (selectedTab) {
+						this.selectedTab = selectedTab;
+					},
+
+					changeSelectedDataType: function (dataType) {
+						this.selectedDataType = dataType;
+					},
+					changeReadTimeOfLastGraphUpdate: function (readTime) {
+						console.log('changed read time to ' + readTime.toISOString());
+						this.readTimeOfLastGraphUpdate = readTime;
+					},
+
+					fetchData: function () {
+						var startTime = new Date();
+						startTime.setDate(startTime.getDate() - DAYS_TO_LOAD);
+
+						const loadReadings = $.get({
+							url: API_URL + '/readings/',
+							cache: false
+						}, {
+							start: startTime.toISOString(),
+							sensors: [1, 2, 4, 20, 25],
+							interval: 4,
+							compact: true
+						}, function (readings) {
+							this.readings = readings;
+						}.bind(this));
+
+						$.when(
+							$.get(API_URL + '/stations/', function (stations) {
+								this.stations = stations;
+								for (var s in stations) {
+									if (stations.hasOwnProperty(s)) {
+										this.stationsByID[stations[s]['id']] = stations[s];
+									}
+								}
+							}.bind(this)),
+							$.get(API_URL + '/sensors/', function (sensors) {
+								for (var s in sensors) {
+									if (sensors.hasOwnProperty(s)) {
+										this.sensorsByID[sensors[s]['id']] = sensors[s];
+									}
+								}
+							}.bind(this)),
+							$.get(API_URL + '/station-sensor-links/', {
+								deep: true
+							}, function (links) {
+								for (var l in links) {
+									if (links.hasOwnProperty(l)) {
+										this.linksByID[links[l]['id']] = links[l];
+
+										if (typeof this.linksByStation[links[l]['station']['id']] === 'undefined') {
+											this.linksByStation[links[l]['station']['id']] = [links[l]];
+										} else {
+											this.linksByStation[links[l]['station']['id']].push(links[l]);
+										}
+									}
+								}
+							}.bind(this)),
+							$.get({
+								url: API_URL + '/readings/latest/',
+								cache: false
+							}, function (readings) {
+								this.latestReadings = readings;
+							}.bind(this))
+						).then(function () {
+							this.updateWeather(true);
+							return $.when(loadReadings);
+						}.bind(this)).then(function () {
+							var stationSeries = {};
+
+							for (var s in this.stations) {
+								if (this.stations.hasOwnProperty(s)) {
+									const currentStation = this.stations[s];
+
+									// Reference the station's information from an object indexed with the station's
+									// web ID.
+									this.stationsByID[currentStation['id']]['chart_readings'] = [];
+
+									var initialData = {};
+
+									for (var d in this.linksByStation[currentStation['id']]) {
+										if (this.linksByStation[currentStation['id']].hasOwnProperty(d)) {
+											initialData[this.linksByStation[currentStation['id']][d]['data_type']
+												['short_name']] = [];
+										}
+									}
+
+									for (var r in this.readings) {
+										if (this.readings.hasOwnProperty(r)) {
+											const readingStationSensorLink
+												= this.linksByID[this.readings[r]['station_sensor_link']];
+
+											if (readingStationSensorLink['station']['id'] === currentStation['id']) {
+												currentStation['chart_readings'].push(this.readings[r]);
+
+												const readingDataType = readingStationSensorLink['data_type'];
+
+												var y = this.readings[r]['value'];
+												if (y !== null) {
+													y /= Math.pow(10, readingStationSensorLink['sensor']['decimals']);
+
+													if (typeof readingDataType !== 'undefined') {
+														if (!inBounds(y, readingDataType['bounds'])
+															|| this.readings[r]['invalid']) {
+															y = null;
+														}
+													}
+												}
+
+												initialData[readingDataType['short_name']].push([
+													new Date(this.readings[r]['read_time']).getTime(), y
+												]);
 											}
 										}
 									}
 
-									initialData[sensorType].push([
-										new Date(dataStore.readings[r]["read_time"]).getTime(), y
-									]);
+									for (var dd in DISABLED_DATA_TYPES[currentStation['id']]) {
+										if (DISABLED_DATA_TYPES[currentStation['id']].hasOwnProperty(dd)) {
+											initialData[DISABLED_DATA_TYPES[currentStation['id']][dd]] = [];
+										}
+									}
+
+									for (var i in initialData) {
+										if (initialData.hasOwnProperty(i)) {
+											if (stationSeries[i] === undefined) {
+												stationSeries[i] = [];
+											}
+
+											stationSeries[i].push({
+												name: this.stations[s]['name'],
+                                                type: 'spline',
+												data: initialData[i],
+												stationIndex: s
+											});
+										}
+									}
 								}
 							}
-						}
 
-						if (currentStation["id"] === 3) {
-							// Leroi Swamp RH sensor is not functional.
-							initialData["air_temp"] = [];
-						}
+							this.stationSeries = stationSeries;
 
-						if (currentStation["id"] === 3) {
-							// Leroi Swamp RH sensor is not functional.
-							initialData["rh"] = [];
-						}
+							if (this.readings.length > 0) {
+								this.changeReadTimeOfLastGraphUpdate(
+									new Date(this.readings[this.readings.length - 1]['read_time'])
+								);
+							}
 
-						if (currentStation["id"] === 6) {
-							// Queen's Point RH sensor is not functional.
-							initialData["rh"] = [];
-						}
+							this.loaded = true;
+                            $(window).resize();
 
-						for (var i in initialData) {
-							if (initialData.hasOwnProperty(i)) {
-								if (stationSeries[i] === undefined) {
-									stationSeries[i] = [];
-								}
+							setInterval(function () {
+								$.get({
+									url: API_URL + '/settings/receiving_data/',
+									cache: false
+								}, function (receivingData) {
+									if (receivingData.value === '0') {
+										$.get({
+											url: API_URL + '/readings/latest/',
+											cache: false
+										}, function (readings) {
+											this.latestReadings = readings;
+											this.updateWeather(false);
+										}.bind(this));
+									}
+								}.bind(this));
+							}.bind(this), 20000);
+						}.bind(this), function () {
+							this.statusMessage = 'Error loading data.';
+						}.bind(this));
+					},
 
-								stationSeries[i].push({
-									name: dataStore.stations[s].name,
-									data: initialData[i],
-									stationIndex: s
+					updateWeather: function (first) {
+						// Initialize arrays used for averaging.
+						var allValues = {
+							'air_temp': [],
+							'rh': [],
+							'baro': [],
+							'wind_speed': [],
+							'mean_wind_speed': [],
+							'wind_dir': [],
+							'mean_wind_direction': []
+						};
+
+						// Initialize array used for table values.
+						// TODO: Don't use this anymore...
+						var readings = {
+							'air_temp': {
+								value: undefined,
+								suffix: '&deg;C'
+							},
+							'rh': {
+								value: undefined,
+								suffix: '%'
+							},
+							'baro': {
+								value: undefined,
+								suffix: ' hPa'
+							},
+							'wind_speed': {
+								value: undefined,
+								suffix: ' m/s'
+							},
+							'mean_wind_speed': {
+								value: undefined,
+								suffix: ' m/s'
+							},
+							'wind_dir': {
+								value: undefined,
+								suffix: '&deg;'
+							},
+							'mean_wind_direction': {
+								value: undefined,
+								suffix: '&deg;'
+							}
+						};
+
+						for (var s in this.stations) {
+							if (this.stations.hasOwnProperty(s)) {
+								const currentStation = this.stations[s];
+
+								const latestReadings = $.grep(this.latestReadings, function (e) {
+									return e['station'] === currentStation['id'];
 								});
+
+								for (var r in readings) {
+									if (readings.hasOwnProperty(r)) {
+										// Set proper values for table display.
+
+										const rc = r;
+
+										const currentReading = ($.grep(latestReadings, function (e) {
+											return this.linksByID[e['station_sensor_link']]['data_type']['short_name']
+												=== rc;
+										}.bind(this)))[0];
+
+										// By default, leave a nice N/A message.
+										readings[r]['value'] = NA_STRING;
+
+										if (typeof currentReading !== 'undefined' && currentReading !== null) {
+											// A reading was found matching the correct data type.
+											const readingStationSensorLink
+												= this.linksByID[currentReading['station_sensor_link']];
+
+											if (DISABLED_DATA_TYPES[currentStation['id']]
+													.indexOf(readingStationSensorLink['data_type']['short_name'])
+												=== -1) {
+												var value = currentReading['value']
+													/ Math.pow(10.0, readingStationSensorLink['sensor']['decimals']);
+												if (inBounds(value,
+														this.linksByID[currentReading['station_sensor_link']]
+															['data_type']['bounds'])) {
+													allValues[r].push(value);
+												}
+
+												// Round off to 1 decimal place and set the value string with the
+												// suffix.
+												const rp = Math.pow(10.0,
+													readingStationSensorLink['sensor']['decimals'] - 1);
+												readings[r]['value'] = (Math.round(value * rp) / rp).toString()
+													+ readings[r]['suffix'];
+											}
+										}
+									}
+								}
+
+								var wind_speed = readings['wind_speed']['value'];
+								var wind_dir = readings['wind_dir']['value'];
+								if (currentStation['name'] === 'Queen\'s Point') {
+									// Queen's Point has more of a breakdown of wind speeds.
+									wind_speed = readings['mean_wind_speed']['value'];
+									// Queen's Point has a different sensor type for wind direction.
+									wind_dir = readings['mean_wind_direction']['value'];
+								}
+
+								this.stations[s].latestReadings = {
+									'air_temp': readings['air_temp']['value'],
+									'rh': readings['rh']['value'],
+									'baro': readings['baro']['value'],
+									'wind_speed': wind_speed,
+									'wind_dir': wind_dir
+								};
 							}
 						}
+
+						// Force Highcharts to properly draw height.
+						$(window).resize();
+
+						const lastUpdated = moment(this.latestReadings[this.latestReadings.length - 1]['created']);
+						this.weatherLastUpdated = lastUpdated.format("MMMM Do [at] h:mm A");
+
+						this.currentTemperature = Math.round(allValues['air_temp'].reduce(function (total, number) {
+								return total + number;
+							}, 0) / allValues['air_temp'].length);
+
+						this.currentHumidity = Math.round(allValues['rh'].reduce(function (total, number) {
+								return total + number;
+							}, 0) / allValues['rh'].length);
 					}
 				}
-
-				updateWeather(true);
-
-				var startDay = new Date();
-				startDay.setDate(startDay.getDate() - DAYS_TO_SHOW);
-
-				if (dataStore.readings.length > 0) {
-					dataStore.readTimeOfLastGraphUpdate = new Date(dataStore.readings[dataStore.readings.length - 1]["read_time"]);
-
-					tempOverviewChart = new QCNChart({
-						daysToShow: 7,
-						daysToLoad: 31,
-
-						yAxisLabel: "Temperature (°C)",
-						valueSuffix: "°C",
-
-						dataID: "air_temp",
-
-						container: "temp-overview-container",
-						centralDataStore: dataStore,
-
-						stationSeries: stationSeries["air_temp"],
-						bounds: [-50, 60]
-					});
-				}
-
-				$(".show-on-load").slideDown();
-				$(".status-message").hide();
-				$(".graph-range-container").slideDown();
-			}, function () {
-				$(".status-message").html("Error loading data.");
 			});
 
-			window.setInterval(function () {
-				$.get(API_URL + "/settings/receiving_data/", function (receivingData) {
-					if (receivingData.value === "0") {
-						$.get(API_URL + "/readings/latest/", function (readings) {
-							dataStore.latestReadings = readings;
-							updateWeather(false);
-						});
+			Vue.component('overview-tab', {
+				template: '#overview-tab-template',
+				props: ['currentTemperature', 'currentHumidity', 'weatherLastUpdated', 'readTimeOfLastGraphUpdate',
+                    'selectedDataType', 'stations', 'stationsByID', 'sensorsByID', 'stationSeries'],
+				data: function () {
+					return {
+						processing: false,
+
+						daysToShow: 7,
+
+						excludeStations: [],
+
+						chartOptions: {},
+						chartObject: null,
+						plotLinesX: [],
+
+						// Include constants
+						NA_STRING: NA_STRING
 					}
-				}.bind(this));
-			}.bind(this), 20000);
+				},
+
+				computed: {
+					valueSuffix: function () {
+						switch (this.selectedDataType) {
+							case 'air_temp':
+								return '°C';
+							case 'rh':
+								return '%';
+							case 'baro':
+								return 'hPa';
+							case 'wind_speed':
+								return 'm/s';
+							default:
+								return '';
+						}
+					},
+					plotLinesY: function () {
+						switch (this.selectedDataType) {
+							case 'air_temp':
+								return [];
+							case 'rh':
+								return [{
+									color: "#EEEEEE",
+									value: 100,
+									width: 2
+								}];
+							case 'baro':
+								return [];
+							default:
+								return [];
+						}
+					},
+					yAxisLabel: function () {
+						switch (this.selectedDataType) {
+							case 'air_temp':
+								return 'Temperature (' + this.valueSuffix + ')';
+							case 'rh':
+								return 'Relative Humidity (' + this.valueSuffix + ')';
+							case 'baro':
+								return 'Air Pressure (' + this.valueSuffix + ')';
+							case 'wind_speed':
+								return 'Wind Speed (' + this.valueSuffix + ')';
+							default:
+								return '';
+						}
+					}
+				},
+
+				watch: {
+					selectedDataType: function () {
+						this.refreshChart();
+					}
+				},
+
+				mounted: function () {
+					this.refreshChart();
+					setTimeout(function () { $(window).resize(); this.refreshChart(); }.bind(this), 100);
+				},
+
+				methods: {
+					setDataType: function (dataType) {
+						this.$emit('change-selected-data-type', dataType);
+					},
+					setTimeRange: function (range) {
+						switch (range) {
+							case 'day':
+								this.daysToShow = 1;
+								break;
+							case 'week':
+								this.daysToShow = 7;
+								break;
+							case 'month':
+								this.daysToShow = 31;
+						}
+
+						var dateRange = new Date();
+						this.chartOptions.xAxis.max = dateRange.getTime();
+						dateRange.setDate(dateRange.getDate() - this.daysToShow);
+						this.chartOptions.xAxis.min = dateRange.getTime();
+
+						this.refreshChart();
+					},
+					setReadTimeOfLastGraphUpdate: function (date) {
+						this.$emit('change-read-time-of-last-graph-update', date);
+					},
+
+					refreshChart: function () {
+						var dateRange = new Date();
+						dateRange.setDate(dateRange.getDate() - this.daysToShow);
+
+						this.chartOptions = {
+							title: {text: ""},
+							subtitle: {text: ""},
+
+							xAxis: {
+								type: "datetime",
+								tickPixelInterval: 150,
+								min: dateRange.getTime(),
+								max: (new Date()).getTime()
+							},
+							yAxis: {
+								title: {text: this.yAxisLabel},
+								plotLines: [{
+									value: 0,
+									width: 1,
+									color: "#FF5722"
+								}]
+							},
+							tooltip: {valueSuffix: this.valueSuffix},
+							scrollbar: {enabled: false},
+
+							plotOptions: {
+								series: {
+									marker: {enabled: false},
+									gapSize: 5,
+									lineWidth: 3
+								}
+							},
+
+							chart: {
+								renderTo: 'graph-container',
+								type: 'line',
+								animation: Highcharts.svg,
+								zoomType: 'x',
+								spacingTop: 40,
+								events: {
+									load: function () {
+										setInterval(function () {
+											if (!this.processing) {
+												this.processing = true;
+												$.get(API_URL + "/settings/receiving_data/", function (receivingData) {
+													if (receivingData.value === "0" && this.readTimeOfLastGraphUpdate) {
+														$.get(API_URL + "/readings/", {
+															start: moment(this.readTimeOfLastGraphUpdate).add(45, 'm')
+																.toISOString(),
+															start_exclusive: true,
+															interval: 4,
+															compact: true
+														}, function (readings) {
+															if (readings.length > 0) {
+																console.log(this.readTimeOfLastGraphUpdate);
+																this.addReadings(readings);
+																this.setReadTimeOfLastGraphUpdate(
+																	new Date(readings[readings.length-1]['read_time'])
+																);
+																console.log('Updated readings.');
+															}
+
+															this.processing = false;
+														}.bind(this));
+													} else {
+														this.processing = false;
+													}
+												}.bind(this));
+											}
+										}.bind(this), 5000);
+									}.bind(this)
+								}
+							},
+							series: this.stationSeries[this.selectedDataType]
+						};
+
+						if (this.chartOptions.xAxis.plotLines) {
+							this.chartOptions.xAxis.plotLines
+								= this.chartOptions.xAxis.plotLines.concat(this.plotLinesX);
+						} else {
+							this.chartOptions.xAxis.plotLines = this.plotLinesX;
+						}
+
+						if (this.chartOptions.yAxis.plotLines) {
+							this.chartOptions.yAxis.plotLines
+								= this.chartOptions.yAxis.plotLines.concat(this.plotLinesY);
+						} else {
+							this.chartOptions.yAxis.plotLines = this.plotLinesY;
+						}
+
+						this.chartObject = new Highcharts.Chart(this.chartOptions);
+					},
+
+					addReadings: function (readings) {
+						const maxReadings = 24 * this.daysToLoad;  // Right now using 1 sample point every hour
+
+						for (var r in readings) {
+							if (readings.hasOwnProperty(r)) {
+								const readingStationSensorLink
+									= this.linksByID[readings[r]['station_sensor_link']];
+
+								if (readingStationSensorLink['data_type']['short_name'] === this.selectedDataType) {
+									// Use deep query to save look-ups...
+									const station = readingStationSensorLink['station'];
+									var stationIndex = -1;
+									for (var s in this.stations) {
+										if (this.stations.hasOwnProperty(s)) {
+											if (this.stations[s]['id'] === station['id']) {
+												stationIndex = s;
+											}
+										}
+									}
+
+									if (stationIndex === -1) break;
+
+									var y = readings[r]['value'];
+									if (y !== null)  {
+										y /= Math.pow(10, readingStationSensorLink['sensor']['decimals']);
+
+										if (!inBounds(y, readingStationSensorLink['data_type']['bounds'])
+											|| readings[r]['invalid']) {
+											y = null;
+										}
+									}
+
+									// Any explicitly excluded stations should not get new readings.
+									if (this.excludeStations.indexOf(station['id']) === -1) {
+                                        /*
+                                         Series should have same index as station since they were
+                                         pushed at the same time. Shift if we have more than a
+                                         week's worth of data.
+                                         */
+
+										var seriesIndex = -1;
+
+										for (var c in this.chartObject.series) {
+											if (this.chartObject.series.hasOwnProperty(c)) {
+												if (stationIndex === this.chartObject.series[c]['stationIndex']) {
+													seriesIndex = c;
+												}
+											}
+										}
+
+										if (seriesIndex !== -1) {
+											this.chartObject.series[seriesIndex].addPoint([
+												new Date(readings[r]['read_time']).getTime(), y
+											], false, (this.chartObject.series[seriesIndex].data.length > maxReadings));
+										}
+									}
+								}
+							}
+						}
+
+						var dateRange = new Date();
+						dateRange.setDate(dateRange.getDate() - this.daysToShow);
+
+						this.chartObject.xAxis[0].setExtremes(dateRange.getTime(), (new Date()).getTime());
+						this.chartObject.redraw();
+
+						$(window).resize();
+					}
+				}
+			});
 		});
+    </script>
+
+    <script type="text/x-template" id="overview-tab-template">
+        <div id="overview-tab" class="tab-content">
+            <div id="weather-overview">
+                It is currently around <span id="weather-temperature">{{ currentTemperature }}&deg;C</span> across
+                QUBS properties, <br>
+                with a humidity level of about <span id="weather-humidity">{{ currentHumidity }}%</span>.
+                <div id="weather-last-update">Last updated {{weatherLastUpdated}}.</div>
+            </div>
+            <div id="graph-container" class="graph-container"></div>
+        </div>
     </script>
 </head>
 <body>
-<div id="container">
-    <div id="weather-overview" class="show-on-load">
-        It is currently around <span id="weather-temperature">XX&deg;C</span> across QUBS properties, <br>
-        with a humidity level of about <span id="weather-humidity">YY%</span>.
-        <div id="weather-last-update">Last Updated</div>
-        <div id="temp-overview-container" class="graph-container"></div>
+<div id="app" class="no-nav">
+    <div id="tab-containers" v-if="loaded">
+        <overview-tab v-if="selectedTab == 'overview'"
+                      v-bind:current-temperature="currentTemperature"
+                      v-bind:current-humidity="currentHumidity"
+                      v-bind:weather-last-updated="weatherLastUpdated"
+                      v-bind:read-time-of-last-graph-update="readTimeOfLastGraphUpdate"
+                      v-bind:stations="stations"
+                      v-bind:stations-by-i-d="stationsByID"
+                      v-bind:sensors-by-i-d="sensorsByID"
+                      v-bind:station-series="stationSeries"
+                      v-bind:selected-data-type="selectedDataType"
+                      v-on:change-selected-data-type="changeSelectedDataType"
+                      v-on:change-read-time-of-last-graph-update="changeReadTimeOfLastGraphUpdate"></overview-tab>
     </div>
-    <div class="status-message">Loading...</div>
+    <div class="status-message" v-if="!loaded">{{ statusMessage }}</div>
 </div>
 </body>
 </html>
