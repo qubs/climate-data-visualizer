@@ -1,0 +1,256 @@
+@charset "UTF-8";
+
+/*
+   Copyright 2016 the Queen's University Biological Station
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
+@import url(https://files.qubs.ca/qubs-bar/qubs-bar.css);
+
+body {
+	padding: 0; margin: 0;
+	background-color: #FEFEFE;
+}
+
+nav#tab-navigation {
+	height: 60px;
+	box-sizing: border-box;
+	border-bottom: 1px solid #EAEAEA;
+}
+
+nav#tab-navigation h1 {
+	padding: 0;
+	margin: 0 0 0 1.5rem;
+	height: 60px;
+
+	line-height: 58px;
+	font-family: 'Open Sans', sans-serif;
+	font-weight: lighter;
+	font-size: 1.2rem;
+	color: #666;
+}
+
+nav#tab-navigation ul {
+	position: fixed;
+	display: inline-block;
+	top: 30px; right: 0;
+	margin: 0; padding: 0;
+	box-sizing: border-box;
+
+	list-style: none;
+	font-size: 0;
+}
+nav#tab-navigation ul li {
+	display: inline-block;
+	height: 60px;
+	box-sizing: border-box;
+	margin-right: 1.5rem;
+
+	line-height: 60px;
+	font-family: "Open Sans", sans-serif;
+	font-size: 1rem;
+	color: #9E9E9E;
+
+	cursor: pointer;
+}
+nav#tab-navigation ul li a {
+	display: block;
+	height: 60px;
+
+	line-height: 60px;
+	text-decoration: none;
+	font-family: "Open Sans", sans-serif;
+	font-weight: 600;
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	color: #9E9E9E;
+
+	transition: color 0.15s;
+}
+nav#tab-navigation ul li a.router-link-exact-active {
+	color: #2196F3;
+	transition: color 0.15s;
+}
+nav#tab-navigation ul li a:focus {
+	outline: none;
+}
+
+div#tab-containers {
+	position: fixed;
+	top: 91px; left: 0; right: 0; bottom: 0;
+	overflow-y: auto;
+}
+div#app.no-nav div#tab-containers {
+	top: 0;
+	padding: 40px;
+}
+
+.status-message {
+	position: fixed;
+	left: 50%; top: calc(50% + 45px);
+	margin-left: -100px; margin-top: -10px;
+	width: 200px;
+	min-height: 20px;
+
+	font-family: "Open Sans", sans-serif;
+	line-height: 19px;
+	text-align: center;
+	color: #9E9E9E;
+}
+div#app.no-nav .status-message {
+	top: 50%;
+}
+
+#weather-overview {
+	padding: 1.5rem;
+	box-sizing: border-box;
+	font-size: 2rem;
+	font-family: "Open Sans", sans-serif;
+	font-weight: lighter;
+	color: #757575;
+}
+#weather-overview #weather-temperature {
+	font-weight: 600;
+	color: #8BC34A;
+}
+#weather-overview #weather-humidity {
+	font-weight: 600;
+	color: #3F51B5;
+}
+#weather-overview #weather-last-update {
+	margin-top: 1rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: #BDBDBD;
+}
+
+#weather-table-container {
+	padding: 0 1.5rem 1.5rem 1.5rem;
+	overflow-x: auto;
+}
+
+span.not-available {
+	color: #BDBDBD;
+}
+
+table {
+	width: 100%;
+	min-width: 720px;
+	border-collapse: collapse;
+}
+table th, td {
+	padding: 0.8rem;
+	font-family: "Open Sans", sans-serif;
+}
+table th {
+	font-weight: 600;
+	font-size: 0.85rem;
+	text-transform: uppercase;
+	color: #757575;
+	text-align: left;
+}
+#weather-table-container table th.sortable {
+	cursor: ns-resize;
+}
+table td {
+	font-size: 0.9rem;
+	color: #424242;
+}
+table thead {
+	border-bottom: 1px solid #EEEEEE;
+}
+table tbody tr:nth-child(even) {
+	background-color: #FAFAFA;
+}
+
+div.wind-direction-indicator {
+	display: inline-block;
+	box-sizing: border-box;
+	height: 26px; width: 26px;
+	margin-left: 20px;
+	padding-left: 1px;
+	border-radius: 13px;
+
+	background-color: #90A4AE;
+
+	text-align: center;
+	line-height: 26px;
+	color: #ECEFF1;
+}
+
+.graph-container {
+	width: 100%; height: 600px;
+	box-sizing: border-box;
+}
+
+.graph-range-container {
+	position: absolute;
+	top: 9px;
+	right: 10px;
+	z-index: 95;
+
+	padding: 0; margin: 0;
+
+	list-style: none;
+}
+.graph-range-container li {
+	display: inline-block;
+	margin-left: 0.6rem;
+
+	font-family: "Open Sans", sans-serif;
+	font-weight: 600;
+	font-size: 0.9rem;
+	text-transform: uppercase;
+	color: #9E9E9E;
+
+	cursor: pointer;
+	transition: color 0.15s;
+}
+.graph-range-container li.selected {
+	color: #F44336;
+	transition: color 0.15s;
+}
+
+
+@media screen and (max-width: 1060px) {
+	#qubsBar {
+		display: none;
+	}
+
+	nav#tab-navigation ul {
+		top: 0;
+	}
+
+	div#tab-containers {
+		top: 60px;
+	}
+}
+
+@media screen and (max-width: 920px) {
+	nav#tab-navigation {
+		height: 90px;
+	}
+	nav#tab-navigation h1 {
+		height: 50px;
+		line-height: 48px;
+	}
+	nav#tab-navigation ul {
+		top: 30px;
+		left: 0;
+		margin-left: 1.5rem;
+	}
+	div#tab-containers {
+		top: 90px;
+	}
+}
